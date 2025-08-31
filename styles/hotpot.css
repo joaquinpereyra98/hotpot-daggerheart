@@ -1,0 +1,47 @@
+.hotpot {
+  &.ingredient {
+    .main-section {
+      padding: 0 10px;
+    }
+    .flavor-tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .flavor-tag {
+      display: flex;
+      border-radius: 0.5rem;
+      border: 1px solid light-dark(#18162e, #f3c267);
+      overflow: hidden;
+      
+      span.flavor-label {
+        display: flex;
+        align-items: center;
+        padding: 0 0.25rem;
+        flex: 1;
+        font-weight: 600;
+        white-space: nowrap;
+        border-radius: 0.5rem 0 0 0.5rem;
+        background: light-dark(transparent, #f3c267);
+        color: light-dark(#18162e, #18162e);
+      }
+      input.flavor-strength {
+        flex: 0 0 4ch;
+        height: auto;
+        text-align: center;
+        font-size: 1rem;
+        border-radius: 0 0.5rem 0.5rem 0;
+        border: none;
+        outline: 0;
+        margin: 2px;
+        --input-height: 1.5rem
+      }
+
+      &:focus-within {
+        outline: 2px solid light-dark(#222, #efe6d8);
+        outline-offset: -2px;
+      }
+    }
+  }
+}

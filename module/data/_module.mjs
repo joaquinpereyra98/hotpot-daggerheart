@@ -1,0 +1,1 @@
+export { default as IngredientModel } from "./ingredient.mjs";
