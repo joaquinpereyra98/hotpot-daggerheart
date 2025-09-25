@@ -1,4 +1,3 @@
-import CONSTANTS from "./constants.mjs";
 /**
  * Convert a module namespace into a plain object.
  * Strips off default exports and meta-properties.
@@ -14,8 +13,4 @@ export function moduleToObject(module, includeDefault = false) {
     obj[key] = value;
   }
   return obj;
-}
-
-export function getTemplatePath() {
-  return `modules/${CONSTANTS.MODULE_ID}/templates`
 }

@@ -1,7 +1,7 @@
 export default {
-  input: "./hot-pot-daggerheart.mjs",
+  input: "./hotpot.mjs",
   output: {
-    file: './public/hot-pot-daggerheart.mjs',
+    file: './public/hotpot.mjs',
     format: 'esm',
   },
 };

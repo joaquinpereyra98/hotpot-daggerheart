@@ -12,8 +12,8 @@
         <div class="flavor-tags">
         {{#each document.system.flavors as |flavor key|}}
         <div class="flavor-tag" data-flavor="{{key}}">
-            <span class="flavor-label"> {{flavor.label}} ({{flavor.die}}) </span>
-            <input class="flavor-strength" type="number" name="system.flavors.{{key}}.strength" value="{{flavor.strength}}">
+            <span class="flavor-label"> {{flavor.label}} (d{{flavor.dieFace}}) </span>
+            <input class="flavor-strength" type="number" name="system.flavors.{{key}}.strength" max="3" value="{{flavor.strength}}">
         </div>
         {{/each}}
         </div>

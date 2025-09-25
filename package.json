@@ -1,5 +1,5 @@
 {
-  "name": "hot-pot-daggerheart",
+  "name": "hotpot-daggerheart",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -16,8 +16,8 @@
     "url": ""
   },
   "bugs": {
-    "url": "https://github.com/joaquinpereyra98/hot-pot-daggerheart/issues"
+    "url": "https://github.com/joaquinpereyra98/hotpot-daggerheart/issues"
   },
-  "homepage": "https://github.com/joaquinpereyra98/hot-pot-daggerheart#readme",
+  "homepage": "https://github.com/joaquinpereyra98/hotpot-daggerheart#readme",
   "description": ""
 }

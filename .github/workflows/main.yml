@@ -36,11 +36,11 @@ jobs:
       - name: Build JS
         run: |
           npm run build --if-present
-          mv --force public/hot-pot-daggerheart.mjs hot-pot-daggerheart.mjs
+          mv --force public/hotpot.mjs hotpot.mjs
 
       - name: Create System Archive
         run: |
-          zip             --recurse-paths              ./module.zip             module.json             README.md             LICENSE             hot-pot-daggerheart.mjs             styles/hot-pot-daggerheart.css             templates/
+          zip             --recurse-paths              ./module.zip             module.json             README.md             LICENSE             hotpot.mjs             styles/hotpot.css             templates/
 
       - name: Update Release With Files
         id: create_version_release

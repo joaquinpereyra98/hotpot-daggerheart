@@ -1,4 +1,4 @@
-import { getTemplatePath } from "../utils.mjs";
+import CONSTANTS from '../constants.mjs';
 
 /**
  * Factory function that creates a custom Item Sheet for ingredients.
@@ -35,8 +35,8 @@ export default function createIngredientSheet() {
 
     /**@override */
     static PARTS = {
-      header: { template: `${getTemplatePath()}/ingredient-sheet/header.hbs` },
-      main: { template: `${getTemplatePath()}/ingredient-sheet/main.hbs` }
+      header: { template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/header.hbs` },
+      main: { template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/main.hbs` }
     };
 
     /**@inheritdoc */

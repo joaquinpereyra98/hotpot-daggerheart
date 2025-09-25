@@ -34,14 +34,17 @@ export default class IngredientModel extends foundry.abstract.TypeDataModel {
   /**@inheritdoc */
   prepareBaseData() {
     super.prepareBaseData();
+
     for (const [k, v] of Object.entries(this.flavors)) {
+      const cfg = CONFIG.HOTPOT.flavors[k];
       this.flavors[k] = {
-        strength: v.strength,
-        label: CONFIG.HOTPOT.flavors[k].label,
-        dieFace: CONFIG.HOTPOT.flavors[k].dieFace,
-        die: `d${CONFIG.HOTPOT.flavors[k].dieFace}`,
-      }
+        strength: v.strength ?? 0,
+        label: game.i18n.localize(cfg.label),
+        dieFace: cfg.dieFace,
+      };
     }
+
+
   }
 
   /**

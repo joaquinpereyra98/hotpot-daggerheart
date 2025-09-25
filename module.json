@@ -36,12 +36,17 @@
       "ingredient": {
         "htmlFields": ["description"]
       }
+    },
+    "ChatMessage" : {
+      "hotpot": {
+        "gmOnlyFields": ["completed"]
+      }
     }
   },
   "flags": {
     "hotReload": {
       "extensions": ["css", "hbs"],
-      "paths": ["styles", "templates/"]
+      "paths": ["styles/hotpot.css", "templates/"]
     }
   }
 }
