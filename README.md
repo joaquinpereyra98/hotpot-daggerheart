@@ -1,17 +1,60 @@
-**Cookbook**: durante el **downtime**, anotarán cada receta que preparen, incluyendo su **nombre**, **ingredientes**, método de cocción y cómo quedó.
+# Hotpot! – a Daggerheart Module for FoundryVTT
 
-**Ingredient** An ingredient has **1–3 flavors**. Every flavor is linked to a specific **die size**, and **strength** that determines how many of that die the players roll when cooking with the ingredient.
+Hotpot add the mechanics of the Beast Feast Frame to be able to play on the Daggerheart system.
 
-**Downtime Move: Make a Feast**. The PCs who choose to Make a Feast should decide which ingredients they’re using, then erase those ingredients from their inventory
-Then set a name and description for the dish and record it in their party’s **Cookbook**.
+## Features
 
-When the PCs begin cooking, they roll the appropriate number of flavor dice.
-They roll the dice and look matching values. If there are no matching values, they discard a single die of their choice, then roll the pool again to continue cooking. When they get any number of matching values, players collect those dice off to the side and continue rolling. When they have only one die left, the meal is done.
-Take each set of matched dice and add their values together. For example, a d6 and a d8 that rolled matching 3s would be worth 3. A d10 and d12 that rolled matching 4s would be worth 4. A d8 and a d20 that rolled matching 4s (on a different roll) would also be worth 4. Together, they have a Meal Rating of 11.
+- Ingredients
+  _From the Dungeon to the Table._
+  A new item subtype has been added to the system, Ingredients. And they can be tracked from the character sheet.
 
-All PCs who eat the meal can individually use the value of the Meal Rating to clear Hit Points, clear Stress, and gain Hope, dividing this value however they’d like.
+- Making a Feast!
+  _[Serves everyone the same, nondescript slop] For the appetizer, Caesar salad, escargot, and your Oriental spring rolls._
+  A new macro allows you to create _Hotpots_, and manage the feast and the recipe.
 
-Anytime a party makes a dish with the same **flavor profile** as another recipe they’ve previously recorded in their cookbook, they should add a number of tokens equal to the party’s current tier to their pool of flavor dice.
-When they must discard a die, they can instead discard one of these tokens.
+- Cookbook
+  _It is our job to follow the recipe._
+  Save and reference past recipes, including flavor profiles, meal names, and descriptions on Journals. (moderately implemented)
 
-A PC can hold a number of ingredients equal to the value of their highest character trait. 
+## Installation
+
+You can manually install the module by following these steps:
+
+1. Inside Foundry, select the Game Modules tab in the Configuration and Setup menu
+2. Click the Install Module button and enter the following URL:
+
+```
+
+```
+
+3. Click Install and wait for installation to complete.
+
+## Usage Instructions
+
+1. Collect Ingredients
+   Players collect **ingredients** (items) on their actor sheets as they explore dungeons and complete adventures.
+2. Make a Feast
+   During downtime, the GM runs the **“Hotpot: Make a Feast!”** macro to begin the cooking process.
+3. Contribute ingredients
+   In the **Ingredient Step**, players drag ingredients from their actor sheets into the recipe to contribute them to the feast.
+4. Name and describe the dish
+   In the **Record Step**, the group decides on the dish’s name and description, and selects the journal where the recipe will be saved.
+5. Roll Flavor Dice (see next point)
+   In the **Roll Step**, the module automatically assembles the dice pool based on the contributed ingredients.
+   The GM manages the rolls, discards dice when necessary, and can spend tokens to preserve the dice pool.
+6. Finish the Feast
+   Once cooking is complete, the **Meal Rating** now represents the group's total recovery value.
+   Click the button to the right of the Tokens to record the recipe in the journal and close the application.
+
+### Roll Workflow
+
+1. The GM clicks the Roll button in the Current Pool section, and all dice in the current pool are rolled at once.
+2. Check for Matches: Look at the results in the center panel, it shows the matched dice as shiny and the others as dull.
+3. Collect Matched Dice: Click the arrow-right-bracket icon next to Matched Dice to collect the matches.
+   The result total is automatically added to the Meal Rating. And the dice are removed from the Current Pool.
+4. If a roll produces no matches, you must remove a die or spend a token:
+   - Remove a Die: Manually lower the count of one die in the Current Pool.
+   - Spend a Token: Discount a token instead of discarding a die.
+     After discarding or spending, click Roll again to continue.
+5. With the remaining dice still in the Current Pool, click Roll again.
+   Repeat steps 2–4 until only you’re done cooking.
