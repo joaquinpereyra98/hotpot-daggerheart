@@ -2,13 +2,19 @@
   <h4 class="step-title">{{step.label}}</h4>
   <div class="flexrow">
     <div class="inputs-continers flexcol">
-      <input value="{{document.system.mealRating}}" name="system.mealRating" type="number">
+      <input value="{{document.system.mealRating}}" name="system.mealRating" type="number" {{disabled (not isGM)}}>
       <div class="label-input">Meal Ratings</div>
     </div>
     <div class="inputs-continers flexcol">
-      <input class="input-tokens" name="system.tokens" value="0" type="number">
+      <input class="input-tokens" name="system.tokens" value="{{document.system.tokens}}" type="number" {{disabled (not isGM)}}>
       <div class="label-input"> Tokens </div>
     </div>
+    {{#if isGM}}
+    <button class="finish-button" data-action="finishHotpot" data-tooltip="Finish Hotpot">
+      <i class="fa-regular fa-pot-food"></i>
+      <i class="fa-regular fa-circle-check"></i>
+    </button>
+    {{/if}}
   </div>
   <div class="flexrow roll-container scrollable">
     <div class="dice-pool flexrow">
@@ -43,7 +49,7 @@
         <div class="total-label">Total: {{totalMatch}}</div>
         {{#if isGM}}
         <a class="icon fa-regular fa-arrow-right-to-bracket" data-tooltip="Collect Matches Sets"
-          data-action="collectMatched" {{disabled (not totalMatch)}}></a>
+          data-action="collectMatched" {{disabled (not totalMatch )}}></a>
         {{/if}}
       </div>
     </fieldset>
@@ -53,7 +59,7 @@
         {{#each document.system.currentPool as |v k|}}
         <div class="flavor-tag {{#unless v}}inactive{{/unless}}" data-flavor="{{key}}">
           <span class="flavor-label"> {{k}}</span>
-          <input class="flavor-strength" type="number" name="system.currentPool.{{k}}" value="{{v}}">
+          <input class="flavor-strength" type="number" name="system.currentPool.{{k}}" value="{{v}}" {{disabled (not @root.isGM)}}>
         </div>
         {{/each}}
       </div>

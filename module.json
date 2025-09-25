@@ -39,6 +39,7 @@
     },
     "ChatMessage" : {
       "hotpot": {
+        "htmlFields": ["recipe.description"],
         "gmOnlyFields": ["completed"]
       }
     }

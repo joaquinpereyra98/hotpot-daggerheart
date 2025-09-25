@@ -21,6 +21,10 @@ const CONSTANTS = foundry.utils.deepFreeze({
   }],
   queries: {
     updateHotpotAsGm: "hotpot-daggerheart.updateHotpotAsGm"
+  },
+  JOURNAL_FLAGS: {
+    CATEGORY: "isRecipeCategory",
+    FLAVORS: "flavorProfile",
   }
 });
 

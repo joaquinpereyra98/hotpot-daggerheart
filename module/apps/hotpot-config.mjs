@@ -1,4 +1,5 @@
 import CONSTANTS from "../constants.mjs";
+import HotpotMessageData from "../data/hotpot-message-data.mjs";
 import IngredientModel from "../data/ingredient.mjs";
 
 const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -27,8 +28,8 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       resizable: true,
     },
     position: {
-      width: 550,
-      height: 500,
+      width: 560,
+      height: 530,
     },
     form: {
       submitOnChange: true,
@@ -40,6 +41,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       removeIngredient: HotpotConfig.#onRemoveIngredient,
       collectMatched: HotpotConfig.#onCollectMatched,
       rollFlavor: HotpotConfig.#onRollFlavor,
+      finishHotpot: HotpotConfig.#onFinishHotpot,
     },
   };
 
@@ -78,7 +80,18 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   }
 
   /** @override */
-  _canRender(_options) { }
+  _canRender(_options) {
+    return !this.document.completed;
+  }
+
+  /**@override */
+  get isEditable() {
+    if (this.document.pack) {
+      const pack = game.packs.get(this.document.pack);
+      if (pack.locked) return false;
+    }
+    return true;
+  }
 
   /** @inheritDoc */
   async _onRender(context, options) {
@@ -194,6 +207,9 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       case "roll":
         await this._prepareRollContext(context, options);
         break;
+      case "record":
+        await this._prepareRecordContext(context, options);
+        break
     }
     return context;
   }
@@ -235,6 +251,26 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     context.dicePoolIsEmpty = !Object.values(currentPool).some(v => v > 0);
     context.matchedDice = matchedDice;
     context.totalMatch = Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
+  }
+
+  async _prepareRecordContext(context, _options) {
+    /**@type {HotpotMessageData} */
+    const { schema, recipe } = this.document.system;
+    const { TextEditor } = foundry.applications.ux;
+
+    context.journal = {
+      field: schema.getField("recipe.journal"),
+      value: recipe.journal,
+    };
+
+    context.description = {
+      field: schema.getField("recipe.description"),
+      value: recipe.description,
+      enriched: await TextEditor.implementation.enrichHTML(recipe.description, {
+        relativeTo: this.document,
+        secrets: game.user.isGM,
+      })
+    };
   }
 
   /* -------------------------------------------- */
@@ -355,6 +391,23 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     const dice = await Promise.all(diceTerms);
 
     return await this.document.update({ "system.dicePool": dice.map(d => d.toJSON()) });
+  }
+
+  /**
+   * @type {ApplicationClickAction}
+   * @this HotpotConfig
+   */
+  static async #onFinishHotpot() {
+    if (!game.user.isGM) return;
+    /**@type {HotpotMessageData} */
+    const system = this.document.system;
+    const { recipe } = system;
+
+    if (recipe.journal) await system._createJournal();
+
+    await this.document.update({ "system.completed": true });
+
+    return await this.close();
   }
 
 }

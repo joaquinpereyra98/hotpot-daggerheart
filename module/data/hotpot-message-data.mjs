@@ -1,5 +1,6 @@
 import HotpotConfig from "../apps/hotpot-config.mjs";
 import CONSTANTS from "../constants.mjs";
+import { findDocByFlag } from "../utils.mjs";
 
 /**
  * @typedef DieData
@@ -44,11 +45,12 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**@override */
   static defineSchema() {
-    const { TypedObjectField, SchemaField, DocumentUUIDField, StringField, NumberField, BooleanField, ArrayField, HTMLField, ObjectField } = foundry.data.fields;
+    const { TypedObjectField, SchemaField, DocumentUUIDField, StringField, NumberField, BooleanField, ArrayField, HTMLField, ObjectField, ForeignDocumentField } = foundry.data.fields;
     return {
       recipe: new SchemaField({
         name: new StringField({ initial: "New Recipe" }),
-        description: new HTMLField()
+        description: new HTMLField(),
+        journal: new ForeignDocumentField(foundry.documents.BaseJournalEntry, { required: true }),
       }),
       completed: new BooleanField({ gmOnly: true }),
       ingredients: new TypedObjectField(new SchemaField({
@@ -113,6 +115,15 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     return totals;
   }
 
+  /**
+   * Party’s tier.
+   * @returns {Number}
+   */
+  get partyTier() {
+    const actors = Object.values(this.ingredients).map(i => i.document.actor);
+    const tiers = new Set(actors).reduce((acc, a) => [...acc, a.system.tier], []);
+    return Math.max(1, Math.min(...tiers));
+  }
   /* -------------------------------------------- */
   /*  Step Logic                                  */
   /* -------------------------------------------- */
@@ -157,9 +168,26 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /* -------------------------------------------- */
-  /*  Flavor Rolls Logic                          */
+  /*  Hotpot Logic                                */
   /* -------------------------------------------- */
 
+  /**
+   * Get the number of tokens.
+   * @returns {number}
+   */
+  _getTokenInitials() {
+    const { FLAVORS } = CONSTANTS.JOURNAL_FLAGS;
+    const { objectsEqual } = foundry.utils;
+
+    const recipeJournal = this.recipe?.journal;
+    if (!recipeJournal) return 0;
+
+    const storedRecipePages = findDocByFlag(recipeJournal.pages, FLAVORS, { multiple: true });
+    const currentFlavorProfile = Object.fromEntries(Object.entries(this.totals).map(([k, v]) => [k, v.strength]));
+    const hasMatchingProfile = storedRecipePages.some(p => objectsEqual(currentFlavorProfile, p.getFlag(CONSTANTS.MODULE_ID, FLAVORS)));
+
+    return hasMatchingProfile ? this.partyTier ?? 0 : 0;
+  }
 
   /**
    * Process duplicate results in dice and mark them as active if repeated.
@@ -179,6 +207,48 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       }
     }
   }
+
+  /**
+   * Creates (if necessary) a journal category and a journal entry page
+   * in the journal specified in the recipe.
+   * @returns {Promise<foundry.documents.JournalEntryPage|void>}
+   */
+  async _createJournal() {
+    const { JournalEntryPage } = foundry.documents;
+    const { journal, name, description } = this.recipe;
+    if (!journal) return;
+
+    const category = findDocByFlag(journal.categories, CONSTANTS.JOURNAL_FLAGS.CATEGORY) ?? await this.#createCategory(journal);
+
+    const flavorProfile = Object.fromEntries(
+      Object.entries(this.totals).map(([k, v]) => [k, v.strength])
+    );
+
+    const flavorProfileText = `<h2>Flavor Profile</h2> ${Object.values(this.totals).map(v => `<p>${v.label}(d${v.dieFace}): ${v.strength}</p>`).join("")}`
+    return JournalEntryPage.implementation.create({
+      name,
+      "text.content": description + flavorProfileText,
+      category: category._id,
+      [`flags.${CONSTANTS.MODULE_ID}.${CONSTANTS.JOURNAL_FLAGS.FLAVORS}`]: flavorProfile
+    }, { parent: journal });
+  }
+
+  /**
+   * Creates a new "Hotpot Recipes" category in the given journal.
+   * @param {foundry.documents.JournalEntry} parent he journal where the category will be created.
+   * @returns {Promise<foundry.documents.JournalEntryCategory>}
+   */
+  async #createCategory(parent) {
+    const { JournalEntryCategory } = foundry.documents;
+    const categories = parent.categories.contents ?? [];
+
+    return JournalEntryCategory.implementation.create({
+      name: "Hotpot Recipes",
+      sort: (categories.length + 1) * CONST.SORT_INTEGER_DENSITY,
+      [`flags.${CONSTANTS.MODULE_ID}.${CONSTANTS.JOURNAL_FLAGS.CATEGORY}`]: true
+    }, { parent });
+  }
+
 
 
   /* -------------------------------------------- */
@@ -250,14 +320,18 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
    * @async
    */
   async _prepareStepUpdate(changed) {
-    if (changed.system.step > this.step) {
-      if (changed.system.step === 1) {
-        changed.system.dicePool ??= [];
-        changed.system.mealRating ??= 0;
-        changed.system.currentPool ??= Object.values(this.totals)
-          .reduce((acc, v) => ({ ...acc, [`d${v.dieFace}`]: v.strength }), {})
+    const STEPS = Object.fromEntries(CONSTANTS.STEPS.map(step => [step.id, step.index]));
+    const goingForward = changed.system.step > this.step;
+    if (goingForward) {
+      switch (changed.system.step) {
+        case STEPS.roll:
+          changed.system.dicePool ??= [];
+          changed.system.mealRating ??= 0;
+          changed.system.currentPool ??= Object.fromEntries(Object.values(this.totals).map(v => [`d${v.dieFace}`, v.strength]));
+          changed.system.tokens ??= this._getTokenInitials();
+          break;
       }
-    };
+    }
   }
 
   /* -------------------------------------------- */
@@ -283,6 +357,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   async _prepareContext(options) {
     const system = foundry.utils.mergeObject(this, options?.context?.system ?? {}, { inplace: false })
     const getClasses = (stepIndex) => {
+      if (this.completed) return ["completed"];
       if (stepIndex === system.step) return ["active"];
       if (stepIndex < system.step) return ["completed"];
       return ["inactive"];
