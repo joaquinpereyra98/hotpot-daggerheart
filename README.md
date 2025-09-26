@@ -5,15 +5,21 @@ Hotpot add the mechanics of the Beast Feast Frame to be able to play on the Dagg
 ## Features
 
 - **Ingredients**
-  _From the Dungeon to the Table._
+  
+  >_From the Dungeon to the Table._
+  
   A new item subtype, Ingredients, has been added to the system and can now be tracked directly from the character sheet.
 
 - **Making a Feast!**
-  _[Serves everyone the same, nondescript slop] For the appetizer, Caesar salad, escargot, and your Oriental spring rolls._
+  
+  >_[Serves everyone the same, nondescript slop] For the appetizer, Caesar salad, escargot, and your Oriental spring rolls._
+  
    The module allows you to create Hotpots and manage the feasts
 
 - **Cookbook** (moderately implemented)
-  _It is our job to follow the recipe._
+  
+  >_It is our job to follow the recipe._
+  
   Save and reference past recipes, including flavor profiles, meal names, and descriptions on Journals.
 
 ## Installation
