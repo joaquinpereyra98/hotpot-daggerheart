@@ -94,6 +94,12 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   }
 
   /** @inheritDoc */
+  async _onFirstRender(context, options) {
+    await super._onFirstRender(context, options);
+    Object.values(this.document.system.ingredients).forEach(i => i.document.apps[this.id] = this)
+  }
+
+  /** @inheritDoc */
   async _onRender(context, options) {
     await super._onRender(context, options);
     new foundry.applications.ux.DragDrop.implementation({
@@ -105,6 +111,12 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
 
     this._addDiceHoverListener();
   }
+
+  /** @inheritDoc */
+  _onClose(options) {
+    super._onClose(options);
+     Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
+  } 
 
   /**
    * Handle mouse-in and mouse-out events on a dice.

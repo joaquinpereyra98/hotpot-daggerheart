@@ -61,7 +61,7 @@
 
     &::before {
       --pogress-c: light-dark(var(--dark-blue-color), var(--gold-color));
-      --pogress-c2: light-dark(var(--dark-blue-color-40), var(--gold-color-40)) ;
+      --pogress-c2: light-dark(var(--dark-blue-color-40), var(--gold-color-40));
       content: "";
       position: absolute;
       top: 50%;
@@ -96,7 +96,8 @@
         color: var(--dark-blue-color);
       }
       &.active {
-        box-shadow: 0 0 5px 1px light-dark(var(--dark-blue-color), var(--gold-color));
+        box-shadow: 0 0 5px 1px
+          light-dark(var(--dark-blue-color), var(--gold-color));
         transform: scale(1.1);
       }
       &.inactive {
@@ -173,7 +174,10 @@
             }
             img {
               width: 24px;
+              height: 24px;
               border: none;
+              object-fit: cover;
+              object-position: top center;
             }
           }
           .item-quantity {
@@ -294,7 +298,8 @@
                 transform: scale(1.1);
               }
               &.hovered.matched::before {
-                box-shadow: inset 0 0 10px 3px light-dark(var(--dark-blue-color), var(--gold-color));
+                box-shadow: inset 0 0 10px 3px
+                  light-dark(var(--dark-blue-color), var(--gold-color));
               }
               &.hovered:not(.matched) {
                 opacity: 1;
@@ -367,7 +372,8 @@
       transform: scale(0.9);
       &:hover {
         transform: scale(1);
-        box-shadow: 0 0 5px 1px light-dark(var(--dark-blue-color), var(--gold-color));
+        box-shadow: 0 0 5px 1px
+          light-dark(var(--dark-blue-color), var(--gold-color));
       }
     }
 

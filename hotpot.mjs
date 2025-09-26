@@ -9,24 +9,35 @@ import CONSTANTS from "./module/constants.mjs";
 
 const { DocumentSheetConfig } = foundry.applications.apps;
 
-globalThis.HOTPOT = {
-  data: moduleToObject(data),
-  apps: {},
-};
+foundry.utils.setProperty(
+  globalThis,
+  "HOTPOT",
+  {
+    data: moduleToObject(data, false),
+    apps: moduleToObject(apps, false),
+    socket: moduleToObject(socket, false),
+    hooks: moduleToObject(hooks, false),
+    api: {
+      startFeast: data.HotpotMessageData.create,
+    },
+  }
+)
+
 
 Hooks.on("init", () => {
+  const { data, socket, apps } = HOTPOT;
+
   CONFIG.HOTPOT = HOTPOT_CONFIG;
 
   CONFIG.Item.dataModels[data.IngredientModel.metadata.type] = data.IngredientModel;
   CONFIG.ChatMessage.dataModels[data.HotpotMessageData.metadata.type] = data.HotpotMessageData;
   CONFIG.queries[CONSTANTS.queries.updateHotpotAsGm] = socket._onUpdateHotpotAsGm;
 
-  HOTPOT.apps.IngredientSheet = apps.createIngredientSheet();
-  HOTPOT.apps.HotpotConfig = apps.HotpotConfig
+  apps.IngredientSheet = apps.createIngredientSheet();
 
-  DocumentSheetConfig.registerSheet(foundry.documents.Item, CONSTANTS.MODULE_ID, HOTPOT.apps.IngredientSheet, {
+  DocumentSheetConfig.registerSheet(foundry.documents.Item, CONSTANTS.MODULE_ID, apps.IngredientSheet, {
     makeDefault: true,
-    types: [HOTPOT.data.IngredientModel.metadata.type],
+    types: [data.IngredientModel.metadata.type],
   });
 });
 

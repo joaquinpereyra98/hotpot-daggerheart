@@ -4,17 +4,17 @@ Hotpot add the mechanics of the Beast Feast Frame to be able to play on the Dagg
 
 ## Features
 
-- Ingredients
+- **Ingredients**
   _From the Dungeon to the Table._
-  A new item subtype has been added to the system, Ingredients. And they can be tracked from the character sheet.
+  A new item subtype, Ingredients, has been added to the system and can now be tracked directly from the character sheet.
 
-- Making a Feast!
+- **Making a Feast!**
   _[Serves everyone the same, nondescript slop] For the appetizer, Caesar salad, escargot, and your Oriental spring rolls._
-  A new macro allows you to create _Hotpots_, and manage the feast and the recipe.
+   The module allows you to create Hotpots and manage the feasts
 
-- Cookbook
+- **Cookbook** (moderately implemented)
   _It is our job to follow the recipe._
-  Save and reference past recipes, including flavor profiles, meal names, and descriptions on Journals. (moderately implemented)
+  Save and reference past recipes, including flavor profiles, meal names, and descriptions on Journals.
 
 ## Installation
 
@@ -24,7 +24,7 @@ You can manually install the module by following these steps:
 2. Click the Install Module button and enter the following URL:
 
 ```
-
+https://github.com/hotpot-daggerheart/releases/latest/download/module.json
 ```
 
 3. Click Install and wait for installation to complete.
@@ -34,7 +34,7 @@ You can manually install the module by following these steps:
 1. Collect Ingredients
    Players collect **ingredients** (items) on their actor sheets as they explore dungeons and complete adventures.
 2. Make a Feast
-   During downtime, the GM runs the **“Hotpot: Make a Feast!”** macro to begin the cooking process.
+   During downtime, the GM runs the next command on a script macro: `HOTPOT.api.startFeast()` to begin the cooking process.
 3. Contribute ingredients
    In the **Ingredient Step**, players drag ingredients from their actor sheets into the recipe to contribute them to the feast.
 4. Name and describe the dish

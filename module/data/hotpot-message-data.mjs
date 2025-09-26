@@ -256,10 +256,11 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   /* -------------------------------------------- */
 
   /**
-   * 
    * @param {foundry.documents.types.ChatMessageData} data 
+   * @returns {foundry.documents.ChatMessage}
    */
   static async create(data = {}) {
+    if(!game.user.isGM) return;
     const cls = foundry.documents.ChatMessage;
 
     /**@type {foundry.documents.types.ChatMessageData} */
@@ -284,12 +285,16 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /** @inheritDoc */
   async _preUpdate(changed, options, user) {
+    const { hasProperty } = foundry.utils;
+
     const allowed = await super._preUpdate(changed, options, user);
     if (allowed === false) return false;
 
     if ("system" in changed) {
-      if ("dicePool" in changed.system) await this._prepareDiePoolUpdate(changed.system.dicePool);
-      if ("step" in changed.system) await this._prepareStepUpdate(changed);
+      if (hasProperty(changed, "system.dicePool")) await this._prepareDiePoolUpdate(changed.system.dicePool);
+      if (hasProperty(changed, "system.step")) await this._prepareStepUpdate(changed);
+      if (hasProperty(changed, "system.ingredients")) await this._prepareIngredientsUpdate(changed);
+
       options.context = { system: changed.system };
       changed.content = await this.render(options);
     }
@@ -333,6 +338,29 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       }
     }
   }
+
+  async _prepareIngredientsUpdate(changed) {
+    const { hasProperty, isDeletionKey, deleteProperty, fromUuidSync } = foundry.utils;
+
+    // Find the active HotpotConfig app
+    const app = Object.values(this.#document.apps).find(a => a instanceof HotpotConfig);
+    if (!app) return;
+
+    for (const [key, ingredient] of Object.entries(changed.system.ingredients)) {
+      // Handle deletion
+      if (ingredient === null && isDeletionKey(key)) {
+        deleteProperty(this.ingredients[key.slice(2)]?.document.apps, app.id);
+        continue;
+      }
+
+      // Handle addition
+      if (ingredient && !hasProperty(this.ingredients, key)) {
+        const doc = fromUuidSync(ingredient.uuid);
+        doc.apps[app.id] = app;
+      }
+    }
+  }
+
 
   /* -------------------------------------------- */
   /*  Rendering                                   */
