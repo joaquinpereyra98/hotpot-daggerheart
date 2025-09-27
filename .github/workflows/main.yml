@@ -1,9 +1,9 @@
 name: Create Module Files For GitHub Release
 
 env:
-  project_url: 'https://github.com/${{github.repository}}' 
-  latest_manifest_url: 'https://github.com/${{github.repository}}/releases/latest/download/module.json'
-  release_system_url: 'https://github.com/${{github.repository}}/releases/download/${{github.event.release.tag_name}}/module.zip'
+  project_url: "https://github.com/${{github.repository}}"
+  latest_manifest_url: "https://github.com/${{github.repository}}/releases/latest/download/module.json"
+  release_system_url: "https://github.com/${{github.repository}}/releases/download/${{github.event.release.tag_name}}/module.zip"
 
 on:
   release:
@@ -23,7 +23,7 @@ jobs:
         id: sub_manifest_link_version
         uses: cschleiden/replace-tokens@v1
         with:
-          files: 'module.json'
+          files: "module.json"
         env:
           VERSION: ${{github.event.release.tag_name}}
           URL: ${{ env.project_url }}
@@ -40,8 +40,14 @@ jobs:
 
       - name: Create System Archive
         run: |
-          zip             --recurse-paths              ./module.zip             module.json             README.md             LICENSE             hotpot.mjs             styles/hotpot.css             templates/
-
+          zip --recurse-paths ./module.zip \
+            module.json \
+            README.md \
+            LICENSE \
+            hotpot.mjs \
+            styles/hotpot.css \
+            lang/ \
+            templates/
       - name: Update Release With Files
         id: create_version_release
         uses: ncipollo/release-action@v1
@@ -51,6 +57,6 @@ jobs:
           draft: false
           prerelease: ${{ github.event.release.prerelease }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: './module.json, ./module.zip'
+          artifacts: "./module.json, ./module.zip"
           tag: ${{github.event.release.tag_name}}
           body: ${{github.event.release.body}}

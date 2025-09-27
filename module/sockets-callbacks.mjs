@@ -1,5 +1,8 @@
 import HotpotMessageData from "./data/hotpot-message-data.mjs";
 
+const { type } = HotpotMessageData.metadata;
+const { isEmpty } = foundry.utils;
+
 /**
  * Update a Foundry document as the GM.
  * @param {Object} params - Parameters for the update operation.
@@ -9,9 +12,14 @@ import HotpotMessageData from "./data/hotpot-message-data.mjs";
  * @returns {Promise<foundry.abstract.Document|undefined>} The updated document, or `undefined` if no update occurred.
  */
 export async function _onUpdateHotpotAsGm({ messageId, data, operation } = {}) {
-  /**@type {foundry.abstract.Document} */
+  /**@type {foundry.documents.ChatMessage} */
   const doc = game.messages.get(messageId);
-  if (!doc || foundry.utils.isEmpty(data)) return;
-  if(doc.type !== HotpotMessageData.metadata.type || doc.system.completed) return;
+
+  if (
+    isEmpty(data) ||
+    doc?.type !== type ||
+    doc?.system?.completed
+  ) return;
+
   return await doc.update(data, operation);
 }
