@@ -39,6 +39,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       previousStep: HotpotConfig.#onPreviousStep,
       modifyItemQuantity: HotpotConfig.#onModifyItemQuantity,
       removeIngredient: HotpotConfig.#onRemoveIngredient,
+      modifyTokenNumber: HotpotConfig.#onModifyTokenNumber,
       collectMatched: HotpotConfig.#onCollectMatched,
       rollFlavor: HotpotConfig.#onRollFlavor,
       finishHotpot: HotpotConfig.#onFinishHotpot,
@@ -370,6 +371,22 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     const { itemId } = target.closest("[data-item-id]").dataset;
     if (!itemId) return;
     return this.#submitUpdate({ [`system.ingredients.-=${itemId}`]: null });
+  }
+
+  /**
+   * @type {ApplicationClickAction}
+   * @this HotpotConfig
+   */
+  static #onModifyTokenNumber(_, target) {
+    const addend = target.dataset.modification === "increase" ? 1 : -1;
+    // Find the input with the class 'input-tokens' closest to the button
+    const input = target.closest("div")?.querySelector(".input-tokens") || target.parentElement.querySelector(".input-tokens");
+    if (!input) return;
+    let currentTokens = Number(input.value ?? 0);
+    const newTokenCount = Math.max(0, currentTokens + addend);
+
+    input.value = newTokenCount;
+    return this.#submitUpdate({ "system.tokens": newTokenCount });
   }
 
   /**
