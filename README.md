@@ -30,7 +30,7 @@ You can manually install the module by following these steps:
 2. Click the Install Module button and enter the following URL:
 
 ```
-https://github.com/hotpot-daggerheart/releases/latest/download/module.json
+https://github.com/joaquinpereyra98/hotpot-daggerheart/releases/latest/download/module.json
 ```
 
 3. Click Install and wait for installation to complete.
