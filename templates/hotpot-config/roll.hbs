@@ -55,7 +55,7 @@
         <div class="total-label">Total: {{totalMatch}}</div>
         {{#if isGM}}
         <a class="icon fa-regular fa-arrow-right-to-bracket" data-tooltip="Collect Matches Sets"
-          data-action="collectMatched" {{disabled (not totalMatch )}}></a>
+          data-action="collectMatched" {{disabled (or (not totalMatch) collectedMatched)}}></a>
         {{/if}}
       </div>
     </fieldset>
