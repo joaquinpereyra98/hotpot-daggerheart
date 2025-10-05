@@ -23,7 +23,6 @@ foundry.utils.setProperty(
   }
 )
 
-
 Hooks.on("init", () => {
   const { data, socket, apps } = HOTPOT;
 
@@ -39,7 +38,16 @@ Hooks.on("init", () => {
     makeDefault: true,
     types: [data.IngredientModel.metadata.type],
   });
+
+  stupidPatchIMustRemove();
 });
 
+function stupidPatchIMustRemove() {
+  const { id, fn } = Hooks.events.renderChatMessageHTML[0];
+  Hooks.on("renderChatMessageHTML", (message, html, context) => {
+    fn(message, html, context ?? { message: message.toObject() });
+  });
+  Hooks.off("renderChatMessageHTML", id);
+}
+
 Hooks.on("renderCharacterSheet", hooks.onRenderCharacterSheet);
-Hooks.on("renderChatMessageHTML", data.HotpotMessageData.onRenderChatMessageHTML);

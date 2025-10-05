@@ -6,7 +6,7 @@
       Drop Ingredients Here
     </div>
     <ul class="ingredients-list scrollable">
-    {{#each ingredients}}
+      {{#each ingredients}}
       <li class="item" data-item-id="{{document.id}}">
         <div class="item-row">
           <div class="item-column item-name">
@@ -28,7 +28,10 @@
               {{disabled (eq document.system.quantity quantity)}}></a>
           </div>
           <div class="item-column item-controls">
-            <a class="item-control fa-regular fa-trash" data-action="removeIngredient"></a>
+            {{#if document.isOwner}}
+             <a class="item-control fa-regular fa-globe" data-action="openIngredient" data-tooltip="Open Ingredient Sheet"></a>
+            {{/if}}
+            <a class="item-control fa-regular fa-trash" data-action="removeIngredient" data-tooltip="Remove Ingredient"></a>
           </div>
           {{/if}}
         </div>
@@ -41,7 +44,7 @@
           {{/each}}
         </div>
       </li>
-    {{/each}}
+      {{/each}}
     </ul>
   </fieldset>
   <fieldset>

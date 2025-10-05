@@ -1,11 +1,11 @@
 <section class="flexcol step-content {{step.class}}" data-step-id="{{step.id}}">
   <h4 class="step-title">{{step.label}}</h4>
   <div class="flexrow">
-    <div class="inputs-continers flexcol">
+    <div class="input-continer flexcol">
       <input value="{{document.system.mealRating}}" name="system.mealRating" type="number" {{disabled (not isGM)}}>
       <div class="label-input">Meal Ratings</div>
     </div>
-    <div class="inputs-continers flexcol">
+    <div class="input-continer flexcol">
       <input class="input-tokens" name="system.tokens" value="{{document.system.tokens}}" type="number" {{disabled (not isGM)}}>
       <div class="label-input"> Tokens </div>
     </div>

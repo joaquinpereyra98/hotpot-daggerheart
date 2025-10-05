@@ -1,15 +1,89 @@
-<div class="hotpot chat-msg">
-  <div class="stepper" style="--progress: calc(({{system.step}} / 2) * 100%)">
-    {{#each steps}}
-    <div class="step {{classes}}" data-tooltip="{{label}}">
-      <i class="{{icon}}"></i>
+<li class="chat-message message daggerheart hotpot flexcol {{cssClass}}" data-message-id="{{message._id}}">
+  <header class="message-header flexrow">
+    <h4 class="message-sender text-style">{{alias}}</h4>
+    <span class="message-metadata">
+      <time class="message-timestamp text-style">{{timeSince message.timestamp}}</time>
+      {{#if canDelete}}
+      <a aria-label="{{localize 'Delete'}}" class="message-delete text-style" data-action="deleteMessage">
+        <i class="fa-solid fa-trash" inert></i>
+      </a>
+      {{/if}}
+      {{#if canClose}}
+      <a aria-label="{{ localize " CHAT.Dismiss" }}" class="message-dismiss text-style" data-action="dismissMessage">
+        <i class="fa-solid fa-xmark" inert></i>
+      </a>
+      {{/if}}
+    </span>
+
+    {{#if isWhisper}}
+    <span class="whisper-to text-style">{{localize 'CHAT.To'}}: {{whisperTo}}</span>
+    {{/if}}
+
+    {{#if message.flavor}}
+    <span class="flavor-text text-style">{{{message.flavor}}}</span>
+    {{/if}}
+  </header>
+  <div class="flexcol hotpot-content">
+    <div class="stepper" style="--progress: calc(({{system.step}} / 2) * 100%)">
+      {{#each steps}}
+      <div class="step {{classes}}" data-tooltip="{{label}}">
+        <i class="{{icon}}"></i>
+      </div>
+      {{/each}}
     </div>
-    {{/each}}
+    <div class="button-container">
+      <button type="button" data-action="openHotpot" {{disabled system.completed}}>
+        <i class="fa-solid fa-pot-food"></i>
+        Open Hotpot
+      </button>
+      {{#if user.isGM}}
+      <a class="finish-button icon-button fa-regular {{ifThen system.completed 'fa-lock' 'fa-lock-open' }}"
+        data-tooltip="{{ifThen system.completed 'Un1lock Hotpot' 'Lock Hotpot' }}" data-action="toggleCompleted"></a>
+      {{/if}}
+    </div>
+    {{#if (gte system.step 2)}}
+    <div class="section-divider"><span class="title">Meal Rating</span></div>
+    <div class="title text-style meal-rating"> {{system.mealRating}}</div>
+    {{/if}}
+    {{#if (gte system.step 1)}}
+    <div class="section-divider"><span class="title">Recipe</span></div>
+    <div class="title text-style flexrow">
+      <span>{{system.recipe.name}}</span>
+      {{#if system.recipe.journal}}
+      <a class="icon-button fa-regular fa-book-bookmark text-style" data-action="openCookbook"></a>
+      {{/if}}
+    </div>
+    <div class="recipe-description scrollable text-style">
+      {{{recipe}}}
+    </div>
+    {{/if}}
+
+    <div class="section-divider"><span class="title">Ingredients</span></div>
+    <ul class="ingredients-list scrollable">
+      {{#each system.ingredients}}
+      <div class="item-row">
+        <div class="item-column item-quantity text-style">
+          <span class="title">{{quantity}}</span>
+          x
+        </div>
+        <div class="item-column item-name">
+          <img src="{{document.img}}" alt="{{document.name}}">
+          <div class="name text-style">{{document.name}}</div>
+        </div>
+        {{#if document.isOwner}}
+        <div class="item-column item-controls">
+          <a class="icon-button item-control fa-regular fa-globe" data-action="openIngredient"
+            data-tooltip="Open Ingredient Sheet"></a>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </ul>
+    {{#if message.content}}
+    <div class="section-divider"><span class="title">Message Content</span></div>
+    <div class="message-content">
+      {{{message.content}}}
+    </div>
+    {{/if}}
   </div>
-  <div class="button-container">
-    <button type="button" data-action="openHotpot" {{disabled system.completed}}>
-      <i class="fa-solid fa-pot-food"></i>
-      Open Hotpot
-    </button>
-  </div>
-</div>
+</li>

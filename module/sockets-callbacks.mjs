@@ -18,7 +18,8 @@ export async function _onUpdateHotpotAsGm({ messageId, data, operation } = {}) {
   if (
     isEmpty(data) ||
     doc?.type !== type ||
-    doc?.system?.completed
+    doc?.system?.completed ||
+    !game.user.isGM
   ) return;
 
   return await doc.update(data, operation);

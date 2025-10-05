@@ -14,6 +14,17 @@ import { findDocByFlag } from "../utils.mjs";
  */
 
 /**
+ * @typedef {foundry.documents.ChatMessage & { system: HotpotMessageData }} HotPotChatMessage
+ */
+
+/**
+ * @callback ChatMessagesClickAction - An on-click action supported by HotpotMessageData.
+ * @param {PointerEvent} event - The originating click event
+ * @param {HTMLElement} target - The capturing HTML element which defines the [data-action]
+ * @returns {void|Promise<void>}
+ */
+
+/**
  * Hotpot Message Data model.
  */
 export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
@@ -26,6 +37,8 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       template: `${CONSTANTS.TEMPLATE_PATH}/chat-message/hotpot.hbs`,
       actions: {
         openHotpot: HotpotMessageData.#onOpenHotpot,
+        toggleCompleted: HotpotMessageData.#onToggleCompleted,
+        openCookbook: HotpotMessageData.#onOpenCookbook,
       }
     }
   }
@@ -67,6 +80,14 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       tokens: new NumberField({ initial: 0, nullable: false, integer: true, min: 0 }),
       step: new NumberField({ initial: 0, min: 0, max: CONSTANTS.STEPS.length - 1 }),
     }
+  }
+
+  _app;
+
+  /**@type {HotpotConfig} */
+  get app() {
+    if (!this._app) this._app = new HotpotConfig({ document: this.#document });
+    return this._app;
   }
 
   /* -------------------------------------------- */
@@ -249,18 +270,16 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     }, { parent });
   }
 
-
-
   /* -------------------------------------------- */
   /*  Lifecycle Methods                           */
   /* -------------------------------------------- */
 
   /**
    * @param {foundry.documents.types.ChatMessageData} data 
-   * @returns {foundry.documents.ChatMessage}
+   * @returns {HotPotChatMessage}
    */
   static async create(data = {}) {
-    if(!game.user.isGM) return;
+    if (!game.user.isGM) return;
     const cls = foundry.documents.ChatMessage;
 
     /**@type {foundry.documents.types.ChatMessageData} */
@@ -272,17 +291,6 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     return await cls.create(createData)
   }
 
-  /**
-   * 
-   * @param {import("@common/documents/_types.mjs").ChatMessageData} data - The initial data object provided to the document creation request
-   * @param {Object} options - Additional options which modify the creation request
-   * @param {foundry.documents.User} user - The id of the User requesting the document update
-   * @inheritdoc
-   */
-  async _preCreate(data, options, user) {
-    data.content = await this.render(options);
-  }
-
   /** @inheritDoc */
   async _preUpdate(changed, options, user) {
     const { hasProperty } = foundry.utils;
@@ -290,14 +298,9 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     const allowed = await super._preUpdate(changed, options, user);
     if (allowed === false) return false;
 
-    if ("system" in changed) {
-      if (hasProperty(changed, "system.dicePool")) await this._prepareDiePoolUpdate(changed.system.dicePool);
-      if (hasProperty(changed, "system.step")) await this._prepareStepUpdate(changed);
-      if (hasProperty(changed, "system.ingredients")) await this._prepareIngredientsUpdate(changed);
-
-      options.context = { system: changed.system };
-      changed.content = await this.render(options);
-    }
+    if (hasProperty(changed, "system.dicePool")) await this._prepareDiePoolUpdate(changed.system.dicePool);
+    if (hasProperty(changed, "system.step")) await this._prepareStepUpdate(changed);
+    if (hasProperty(changed, "system.ingredients")) await this._prepareIngredientsUpdate(changed);
   }
 
   /**
@@ -343,7 +346,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     const { hasProperty, isDeletionKey, deleteProperty, fromUuidSync } = foundry.utils;
 
     // Find the active HotpotConfig app
-    const app = Object.values(this.#document.apps).find(a => a instanceof HotpotConfig);
+    const app = this.app;
     if (!app) return;
 
     for (const [key, ingredient] of Object.entries(changed.system.ingredients)) {
@@ -367,13 +370,27 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   /* -------------------------------------------- */
 
   /**
+   * Render the HTML for the ChatMessage which should be added to the log
+   * @param {object} [options]             Additional options passed to the Handlebars template.
+   * @param {boolean} [options.canDelete]  Render a delete button. By default, this is true for GM users.
+   * @param {boolean} [options.canClose]   Render a close button for dismissing chat card notifications.
+   * @returns {Promise<HTMLElement>}
+   */
+  async renderHTML(options = {}) {
+    const html = foundry.utils.parseHTML(await this.render(options));
+    this.#attachFrameListeners(html);
+    return html;
+  }
+
+  /**
  * Render the contents of this chat message.
  * @param {object} options  Rendering options.
  * @returns {Promise<string>}
  */
   async render(options) {
     if (!this.template) return "";
-    return foundry.applications.handlebars.renderTemplate(this.template, await this._prepareContext(options));
+    const context = await this._prepareContext(options);
+    return foundry.applications.handlebars.renderTemplate(this.template, context);
   }
 
   /**
@@ -382,48 +399,83 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
  * @returns {Promise<ApplicationRenderContext>}   Context data for the render operation.
  * @protected
  */
-  async _prepareContext(options) {
-    const system = foundry.utils.mergeObject(this, options?.context?.system ?? {}, { inplace: false })
-    const getClasses = (stepIndex) => {
-      if (this.completed) return ["completed"];
-      if (stepIndex === system.step) return ["active"];
-      if (stepIndex < system.step) return ["completed"];
-      return ["inactive"];
-    };
+  async _prepareContext({ canDelete, canClose, ...rest } = {}) {
+    const doc = this.#document;
 
-    const steps = CONSTANTS.STEPS.map((s) => {
-      const classes = getClasses(s.index).join(" ");
-      return { ...s, classes };
+    const data = doc.toObject(false);
+
+    const TextEditor = foundry.applications.ux.TextEditor.implementation;
+
+    data.content = await TextEditor.enrichHTML(doc.content, {
+      rollData: doc.getRollData(),
+      secrets: game.user.isGM,
+    });
+
+    const recipe = await TextEditor.enrichHTML(this.recipe.description, {
+      rollData: doc.getRollData(),
+      secrets: game.user.isGM,
+    });
+
+    const isWhisper = !!doc.whisper.length;
+
+    const steps = CONSTANTS.STEPS.map(s => {
+      const status = this.completed
+        ? "completed"
+        : s.index === this.step
+          ? "active"
+          : s.index < this.step
+            ? "completed"
+            : "inactive";
+
+      return { ...s, classes: status };
     });
 
     return {
-      system,
+      ...rest,
+      system: this,
+      recipe,
       steps,
+      canDelete, canClose,
+      message: data,
+      user: game.user,
+      author: doc.author,
+      alias: doc.alias,
+      cssClass: [
+        doc.style === CONST.CHAT_MESSAGE_STYLES.IC ? "ic" : null,
+        doc.style === CONST.CHAT_MESSAGE_STYLES.EMOTE ? "emote" : null,
+        isWhisper ? "whisper" : null,
+        this.#document.blind ? "blind" : null
+      ].filterJoin(" "),
+      isWhisper,
+      whisperTo: doc.whisper.map(u => game.users.get(u)?.name).filterJoin(", ")
     };
   }
 
-  /* -------------------------------------------- */
-  /*  Hook Callback Handler                       */
-  /* -------------------------------------------- */
-
   /**
-   * Add event listeners to the Hotpot Message Data.
-   * @param {foundry.documents.ChatMessage} chatMessage 
+   *  Add event listeners to the HTML Message.
    * @param {HTMLElement} html 
-   * @param {Object} messageData 
    */
-  static onRenderChatMessageHTML(chatMessage, html, messageData) {
-    if (chatMessage.type !== HotpotMessageData.metadata.type) return;
-
+  #attachFrameListeners(html) {
     html.querySelectorAll("[data-action]").forEach(btn => {
       btn.addEventListener("click", (event) => {
         const target = event.currentTarget;
         const { action } = target.dataset;
         const fn = HotpotMessageData.metadata.actions[action];
-        if (fn instanceof Function) fn.call(chatMessage.system, event, target)
+        if (fn instanceof Function) fn.call(this.#document, event, target)
       })
-
     })
+
+    const finishBtn = html.querySelector(".finish-button");
+    if (finishBtn) {
+      const toggleIcons = (lockOn) => {
+        finishBtn.classList.toggle("fa-lock", lockOn);
+        finishBtn.classList.toggle("fa-lock-open", !lockOn);
+      };
+
+      finishBtn.addEventListener("mouseover", () => toggleIcons(!this.completed));
+      finishBtn.addEventListener("mouseout", () => toggleIcons(this.completed));
+    }
+
   }
 
   /* -------------------------------------------- */
@@ -431,12 +483,31 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   /* -------------------------------------------- */
 
   /**
-   * @type {ApplicationClickAction}
-   * @this {HotpotMessageData}
+   * @type {ChatMessagesClickAction}
+   * @this {HotPotChatMessage}
    */
   static #onOpenHotpot() {
-    const app = new HotpotConfig({ document: this.#document });
-    app.render({ force: true });
+    this.system.app.render({ force: true });
   }
 
+  /**
+   * @type {ChatMessagesClickAction}
+   * @this {HotPotChatMessage}
+   */
+  static async #onToggleCompleted(event) {
+    if (!game.user.isGM) return;
+    const { completed } = this.system;
+    await this.update({ "system.completed": !completed });
+    if (!event.shiftKey) this.system.app.render({ force: true });
+  }
+
+  /**
+ * @type {ChatMessagesClickAction}
+ * @this {HotPotChatMessage}
+ */
+  static #onOpenCookbook() {
+    const journal = this.system.recipe.journal;
+    if (!journal);
+    journal.sheet.render({ force: true });
+  }
 }

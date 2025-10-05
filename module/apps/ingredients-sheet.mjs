@@ -19,7 +19,8 @@ export default function createIngredientSheet() {
       classes: ['ingredient', "hotpot"],
       position: { width: 550 },
       actions: {
-        addFlavor: IngredientSheet.#onAddFlavor
+        addFlavor: IngredientSheet.#onAddFlavor,
+        deleteFlavor: IngredientSheet.#onDeleteFlavor,
       },
       contextMenus: [
         {
@@ -95,6 +96,16 @@ export default function createIngredientSheet() {
       return await this.item.update({
         [`system.flavors.${select.value}.strength`]: 1
       });
+    }
+
+    /**
+     * 
+     * @this {IngredientSheet}
+     * @type {import("@client/applications/_types.mjs").ApplicationClickAction}
+     */
+    static async #onDeleteFlavor(_, target) {
+      const { flavor } = target.closest("[data-flavor]")?.dataset ?? {};
+      return await this.item.update({ [`system.flavors.-=${flavor}`]: null });
     }
 
   }

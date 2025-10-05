@@ -15,7 +15,7 @@
     display: flex;
     border-radius: 0.5rem;
     border: 1px solid light-dark(var(--dark-blue-color), var(--gold-color));
-    overflow: hidden;
+    position: relative;
     &.inactive {
       opacity: 0.7;
     }
@@ -24,6 +24,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      border-radius: 0.5em 0 0 0.5em;
       padding: 0 0.25em;
       flex: 1;
       font-weight: 600;
@@ -52,6 +53,56 @@
       outline: 2px solid light-dark(#222, var(--beige-color));
       outline-offset: -2px;
     }
+
+    &:not(:hover):not(:focus-within) a.delete-icon {
+      opacity: 0;
+    }
+
+    a.delete-icon {
+      transition: opacity var(--magic-number);
+      position: absolute;
+      font-size: 14px;
+      bottom: -5px;
+      right: -5px;
+      text-shadow: 0px 0px 2px var(--gold-color);
+      --fa-primary-color: var(--gold-color);
+      --fa-secondary-color: var(--dark-blue-color);
+      --fa-secondary-opacity: 1;
+    }
+  }
+
+  .input-continer {
+    height: 80px;
+    margin: 0 10px;
+    align-items: center;
+    justify-content: center;
+
+    .label-input {
+      font-family: var(--montserrat-font);
+      padding: 2px 10px;
+      border-radius: 3px;
+      background: light-dark(var(--dark-blue-color), var(--gold-color));
+      color: light-dark(var(--beige-color), var(--dark-blue-color));
+      width: 100%;
+      width: -webkit-fill-available;
+      text-align: center;
+      font-weight: bold;
+      font-size: 15px;
+    }
+    input {
+      width: calc(100% - 20px);
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom: 0;
+      border-color: light-dark(var(--dark-blue-color), var(--gold-color));
+      color: light-dark(var(--dark-blue-color), var(--beige-color));
+      text-align: center;
+      font-size: 25px;
+      --input-height: 1.5em;
+      &:disabled {
+        cursor: inherit;
+      }
+    }
   }
 
   .stepper {
@@ -62,6 +113,7 @@
     &::before {
       --pogress-c: light-dark(var(--dark-blue-color), var(--gold-color));
       --pogress-c2: light-dark(var(--dark-blue-color-40), var(--gold-color-40));
+      margin: 0 5px;
       content: "";
       position: absolute;
       top: 50%;
@@ -91,6 +143,7 @@
       border: 2px solid light-dark(var(--dark-blue-color), var(--gold-color));
       background: light-dark(white, var(--dark-blue-color));
       transition: transform var(--magic-number);
+      color: light-dark(var(--dark-blue-color), white);
       &.completed {
         background: var(--gold-color);
         color: var(--dark-blue-color);
@@ -109,12 +162,77 @@
 
   &.ingredient .main-section {
     padding: 0 10px;
-
     .flavor-tags {
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
       justify-content: center;
+    }
+  }
+
+  .ingredients-list {
+    margin-top: 5px;
+    flex: 1 1 auto;
+    min-height: 0;
+
+    .item {
+      padding-bottom: 5px;
+    }
+    .item-row,
+    .item-column {
+      display: flex;
+      align-items: center;
+      text-align: center;
+    }
+    .flavor-row {
+      padding: 0 5px;
+      font-size: 12px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 10px;
+    }
+
+    .item-name {
+      flex: 1;
+      text-align: left;
+      padding: 5px 0px 5px 5px;
+      .name {
+        font-weight: bold;
+        font-size: var(--font-size-15);
+      }
+      img {
+        width: 24px;
+        height: 24px;
+        border: none;
+        object-fit: cover;
+        object-position: top center;
+        margin-right: 5px;
+      }
+    }
+    .item-quantity {
+      .quantity-control {
+        padding: 0px 5px;
+        &[disabled] {
+          opacity: 0.2;
+        }
+      }
+      .quantity-input {
+        text-align: center;
+        width: 4ch;
+        font-size: var(--font-size-15);
+        --input-height: 1.5rem;
+      }
+    }
+    .item-user {
+      border: 1px solid light-dark(var(--dark-blue-color), var(--gold-color));
+      padding: 3px 5px;
+      border-radius: 4px;
+      opacity: 0.5;
+      margin: 0 5px;
+    }
+    .item-controls {
+      flex: 0 0 40px;
+      justify-content: space-around;
     }
   }
 
@@ -141,72 +259,6 @@
         min-height: 150px;
         overflow: hidden;
         align-items: stretch;
-
-        .ingredients-list {
-          margin-top: 5px;
-          flex: 1 1 auto;
-          min-height: 0;
-
-          .item {
-            padding-bottom: 5px;
-          }
-          .item-row,
-          .item-column {
-            display: flex;
-            align-items: center;
-            text-align: center;
-          }
-          .flavor-row {
-            padding: 0 5px;
-            font-size: 12px;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            gap: 10px;
-          }
-
-          .item-name {
-            flex: 1;
-            text-align: left;
-            padding: 5px 0px 5px 5px;
-            .name {
-              font-weight: bold;
-              font-size: var(--font-size-15);
-            }
-            img {
-              width: 24px;
-              height: 24px;
-              border: none;
-              object-fit: cover;
-              object-position: top center;
-            }
-          }
-          .item-quantity {
-            .quantity-control {
-              padding: 0px 5px;
-              &[disabled] {
-                opacity: 0.2;
-              }
-            }
-            .quantity-input {
-              text-align: center;
-              width: 4ch;
-              font-size: var(--font-size-15);
-              --input-height: 1.5rem;
-            }
-          }
-          .item-user {
-            border: 1px solid
-              light-dark(var(--dark-blue-color), var(--gold-color));
-            padding: 3px 5px;
-            border-radius: 4px;
-            opacity: 0.5;
-            margin: 0 5px;
-          }
-          .item-controls {
-            flex: 0 0 40px;
-            justify-content: space-around;
-          }
-        }
       }
     }
 
@@ -229,38 +281,6 @@
     }
 
     .step-content.roll {
-      .inputs-continers {
-        height: 80px;
-        margin: 0 10px;
-        align-items: center;
-        justify-content: center;
-
-        .label-input {
-          font-family: var(--montserrat-font);
-          padding: 2px 10px;
-          border-radius: 3px;
-          background: light-dark(var(--dark-blue-color), var(--gold-color));
-          color: light-dark(var(--beige-color), var(--dark-blue-color));
-          width: 100%;
-          width: -webkit-fill-available;
-          text-align: center;
-          font-weight: bold;
-          font-size: 15px;
-        }
-        input {
-          width: calc(100% - 20px);
-          border-bottom-left-radius: 0;
-          border-bottom-right-radius: 0;
-          border-bottom: 0;
-          border-color: light-dark(var(--dark-blue-color), var(--gold-color));
-          text-align: center;
-          font-size: 25px;
-          --input-height: 1.5em;
-          &:disabled {
-            cursor: inherit;
-          }
-        }
-      }
       .finish-button {
         flex: 0;
         font-size: 25px;
@@ -386,15 +406,79 @@
     }
   }
 
-  &.chat-msg {
-    padding-top: 5px;
+  &.chat-message {
+    .hotpot-content {
+      padding: 0 10px;
+      margin-bottom: 5px;
+
+      .section-divider {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px 0;
+        color: var(--text-color);
+        gap: 10px;
+
+        &::before,
+        &::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, var(--text-color));
+        }
+
+        &::after {
+          background: linear-gradient(90deg, var(--text-color), transparent);
+        }
+      }
+    }
+
+    .text-style,
+    .icon-button {
+      color: light-dark(var(--dark-blue-color), var(--beige-color));
+    }
+
+    .title {
+      font-size: large;
+      text-transform: capitalize;
+      font-family: "Cinzel", sans-serif;
+      font-weight: 700;
+    }
+
+    .meal-rating {
+      text-align: center;
+      font-size: var(--font-size-24);
+    }
+
+    .icon-button {
+      flex: 0 0 15px;
+      &:hover {
+        font-weight: bold;
+      }
+    }
     .button-container {
       display: flex;
-      margin-top: 10px;
       justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+      gap: 5px;
+
       button {
         font-size: large;
+        background: light-dark(transparent, var(--gold-color));
+        &:not(:hover)&:not(:disabled) {
+          background: light-dark(transparent, var(--gold-color));
+        }
       }
+    }
+
+    .scrollable {
+      max-height: 100px;
+      min-height: 30px;
+    }
+    .ingredients-list {
+      margin: 0;
+      padding: 0;
     }
   }
 }

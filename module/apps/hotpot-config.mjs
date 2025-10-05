@@ -81,7 +81,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
 
   /** @override */
   _canRender(_options) {
-    return !this.document.completed;
+    return !this.document.system.completed;
   }
 
   /**@override */
