@@ -42,7 +42,7 @@ https://github.com/joaquinpereyra98/hotpot-daggerheart/releases/latest/download/
    Players collect **ingredients** (items) on their actor sheets as they explore dungeons and complete adventures.
 3. Make a Feast
    
-   During downtime, the GM runs the next command on a script macro: `HOTPOT.api.startFeast()` to begin the cooking process.
+   During downtime, the GM runs the next command on a script macro: `HOTPOT.api.startFeast()` to begin the cooking process. A premade macro has been provided and can be found in the Hotpot Macros compendium.
 4. Contribute ingredients
    
    In the **Ingredient Step**, players drag ingredients from their actor sheets into the recipe to contribute them to the feast.
@@ -66,7 +66,7 @@ https://github.com/joaquinpereyra98/hotpot-daggerheart/releases/latest/download/
    
    The result total is automatically added to the Meal Rating. And the dice are removed from the Current Pool.
 5. If a roll produces no matches, you must remove a die or spend a token:
-   - Remove a Die: Manually lower the count of one die in the Current Pool.
+   - Remove a Die: Manually lower the count of one die in the Current Pool. Dice can be easily removed/added with a left/right click of the mouse over the die sizes in the "Current Pool" section.
    - Spend a Token: Discount a token instead of discarding a die.
      After discarding or spending, click Roll again to continue.
 6. With the remaining dice still in the Current Pool, click Roll again.
