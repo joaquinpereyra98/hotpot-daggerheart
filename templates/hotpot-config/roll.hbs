@@ -1,12 +1,18 @@
 <section class="flexcol step-content {{step.class}}" data-step-id="{{step.id}}">
   <h4 class="step-title">{{step.label}}</h4>
   <div class="flexrow">
-    <div class="input-continer flexcol">
+    <div class="inputs-containers flexcol">
       <input value="{{document.system.mealRating}}" name="system.mealRating" type="number" {{disabled (not isGM)}}>
       <div class="label-input">Meal Ratings</div>
     </div>
-    <div class="input-continer flexcol">
-      <input class="input-tokens" name="system.tokens" value="{{document.system.tokens}}" type="number" {{disabled (not isGM)}}>
+    <div class="inputs-containers flexcol">
+      <div class="token-input flexrow">
+        <a class="quantity-control fa-regular fa-minus" data-action="modifyTokenNumber" data-modification="decrease"
+          {{disabled (eq 0 quantity)}}></a>
+        <input class="input-tokens" name="system.tokens" value="{{document.system.tokens}}" type="number" {{disabled
+          (not isGM)}}>
+        <a class="quantity-control fa-regular fa-plus" data-action="modifyTokenNumber" data-modification="increase"></a>
+      </div>
       <div class="label-input"> Tokens </div>
     </div>
     {{#if isGM}}
@@ -49,7 +55,7 @@
         <div class="total-label">Total: {{totalMatch}}</div>
         {{#if isGM}}
         <a class="icon fa-regular fa-arrow-right-to-bracket" data-tooltip="Collect Matches Sets"
-          data-action="collectMatched" {{disabled (not totalMatch )}}></a>
+          data-action="collectMatched" {{disabled (or (not totalMatch) collectedMatched)}}></a>
         {{/if}}
       </div>
     </fieldset>
@@ -58,8 +64,9 @@
       <div class="current-pool-dice">
         {{#each document.system.currentPool as |v k|}}
         <div class="flavor-tag {{#unless v}}inactive{{/unless}}" data-flavor="{{key}}">
-          <span class="flavor-label"> {{k}}</span>
-          <input class="flavor-strength" type="number" name="system.currentPool.{{k}}" value="{{v}}" {{disabled (not @root.isGM)}}>
+          <span class="flavor-label" data-action="modifyFlavor"> {{k}}</span>
+          <input class="flavor-strength" type="number" name="system.currentPool.{{k}}" value="{{v}}" {{disabled (not
+            @root.isGM)}}>
         </div>
         {{/each}}
       </div>

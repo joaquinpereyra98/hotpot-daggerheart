@@ -20,34 +20,61 @@
   "manifest": "#{MANIFEST}#",
   "readme": "README.md",
   "socket": false,
-  "languages": [{
-    "lang": "en",
-    "name": "English",
-    "path": "lang/en.json"
-  }],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
   "relationships": {
     "requires": [],
     "recommends": []
   },
-  "esmodules": ["hotpot.mjs"],
-  "styles": ["styles/hotpot.css"],
+  "esmodules": [
+    "hotpot.mjs"
+  ],
+  "styles": [
+    "styles/hotpot.css"
+  ],
   "documentTypes": {
     "Item": {
       "ingredient": {
-        "htmlFields": ["description"]
+        "htmlFields": [
+          "description"
+        ]
       }
     },
-    "ChatMessage" : {
+    "ChatMessage": {
       "hotpot": {
-        "htmlFields": ["recipe.description"],
-        "gmOnlyFields": ["completed"]
+        "htmlFields": [
+          "recipe.description"
+        ],
+        "gmOnlyFields": [
+          "completed"
+        ]
       }
     }
   },
   "flags": {
     "hotReload": {
-      "extensions": ["css", "hbs"],
-      "paths": ["styles/hotpot.css", "templates/"]
+      "extensions": [
+        "css",
+        "hbs"
+      ],
+      "paths": [
+        "styles/hotpot.css",
+        "templates/"
+      ]
     }
-  }
+  },
+  "packs": [
+    {
+      "name": "macros",
+      "label": "Hotpot Macros",
+      "path": "packs/hotpot-macro",
+      "type": "Macro",
+      "system": "daggerheart"
+    }
+  ]
 }

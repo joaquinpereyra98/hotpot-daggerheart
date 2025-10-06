@@ -39,8 +39,10 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       previousStep: HotpotConfig.#onPreviousStep,
       modifyItemQuantity: HotpotConfig.#onModifyItemQuantity,
       removeIngredient: HotpotConfig.#onRemoveIngredient,
+      modifyTokenNumber: HotpotConfig.#onModifyTokenNumber,
       collectMatched: HotpotConfig.#onCollectMatched,
       rollFlavor: HotpotConfig.#onRollFlavor,
+      modifyFlavor: HotpotConfig.#onModifyFlavor,
       finishHotpot: HotpotConfig.#onFinishHotpot,
     },
   };
@@ -110,13 +112,24 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     }).bind(this.element);
 
     this._addDiceHoverListener();
+    this._addFlavorLabelListeners();
   }
 
   /** @inheritDoc */
   _onClose(options) {
     super._onClose(options);
-     Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
-  } 
+    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
+    // Remove flavor label listeners if added to avoid leaking handlers across renders
+    try {
+      if (this._flavorLabelListenersAdded && this._flavorLabelContextHandler && this.element) {
+        this.element.removeEventListener('contextmenu', this._flavorLabelContextHandler);
+      }
+    } catch (err) {
+      // ignore removal errors
+    }
+    this._flavorLabelListenersAdded = false;
+    this._flavorLabelContextHandler = null;
+  }
 
   /**
    * Handle mouse-in and mouse-out events on a dice.
@@ -143,6 +156,55 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
           .forEach(die => die.classList.remove("hovered"));
       });
     });
+  }
+
+  /**
+   * Add delegated listeners for flavor label clicks.
+   * Left-click decreases the value on the associated input.flavor-strength
+   * Right-click (contextmenu) increases the value.
+   */
+  _addFlavorLabelListeners() {
+    // Only allow flavor modification interactions for GMs
+    if (!game.user.isGM) return;
+    const container = this.element;
+    if (!container) return;
+    
+    // Bind only once to prevent multiple handlers when the app re-renders
+    if (this._flavorLabelListenersAdded) return;
+
+    const handler = (event) => {
+      const target = event.target.closest('[data-action]');
+      if (!target) return;
+      // Prevent the native menu so right-click can be used for action
+      event.preventDefault();
+      const { action } = target.dataset;
+      const fn = this.options.actions?.[action];
+      if (fn instanceof Function) fn.call(this, event, target);
+    };
+
+    container.addEventListener('contextmenu', handler);
+    this._flavorLabelContextHandler = handler;
+    this._flavorLabelListenersAdded = true;
+  }
+
+  /**
+   * Action handler for flavor modifications.
+   * Left-click should decrease, right-click should increase.
+   * @type {ApplicationClickAction}
+   * @this HotpotConfig
+   */
+  static #onModifyFlavor(event, target) {
+    if (!game.user.isGM) return;
+    const isContext = event.type === 'contextmenu' || event.button === 2;
+    const flavorWrapper = target.closest('.flavor-tag');
+    if (!flavorWrapper) return;
+    const input = flavorWrapper.querySelector('.flavor-strength');
+    const key = input.getAttribute('name') ?? null;
+
+    let current = Number(input.value ?? 0);
+    const newVal = isContext ? current + 1 : Math.max(0, current - 1);
+    input.value = newVal;
+    return this.#submitUpdate({ [key]: newVal });
   }
 
   /**
@@ -257,12 +319,14 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    * @param {HandlebarsRenderOptions} options 
    */
   async _prepareRollContext(context, _options) {
-    const { dicePool, currentPool, matchedDice } = this.document.system;
+    const { dicePool, currentPool, matchedDice, collectedMatched } = this.document.system;
 
     context.dice = dicePool;
     context.dicePoolIsEmpty = !Object.values(currentPool).some(v => v > 0);
     context.matchedDice = matchedDice;
     context.totalMatch = Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
+    // Track if matched dice have already been collected
+    context.collectedMatched = this.document.system.collectedMatched ?? (context.totalMatch === 0);
   }
 
   async _prepareRecordContext(context, _options) {
@@ -376,15 +440,42 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    * @type {ApplicationClickAction}
    * @this HotpotConfig
    */
+  static #onModifyTokenNumber(_, target) {
+    const addend = target.dataset.modification === "increase" ? 1 : -1;
+    // Find the input with the class 'input-tokens' closest to the button
+    const input = target.closest("div")?.querySelector(".input-tokens") || target.parentElement.querySelector(".input-tokens");
+    if (!input) return;
+    let currentTokens = Number(input.value ?? 0);
+    const newTokenCount = Math.max(0, currentTokens + addend);
+
+    input.value = newTokenCount;
+    return this.#submitUpdate({ "system.tokens": newTokenCount });
+  }
+
+  /**
+   * @type {ApplicationClickAction}
+   * @this HotpotConfig
+   */
   static async #onCollectMatched() {
-    const { dicePool, currentPool, mealRating, matchedDice } = this.document.system;
+    const { dicePool, currentPool, mealRating, matchedDice, collectedMatched } = this.document.system;
 
-    const newPool = dicePool.reduce((acc, d) => ({ ...acc, [`d${d.faces}`]: Math.max(0, currentPool[`d${d.faces}`] - d.results.filter(r => r.matched).length) }), {});
+    console.log(collectedMatched)
+    // Calculate totalMatch from matchedDice
     const newTotal = mealRating + Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
+    console.log("-----totalMatch-----")
+    console.log(newTotal)
+    console.log("-----totalMatch-----")
+    // Update the dice pool by removing matched dice
+    const newPool = dicePool.reduce((acc, d) => ({
+      ...acc,
+      [`d${d.faces}`]: Math.max(0, currentPool[`d${d.faces}`] - d.results.filter(r => r.matched).length)
+    }), {});
 
+    // Update mealRating with totalMatch and mark collectedMatched as true
     return await this.document.update({
       "system.currentPool": newPool,
       "system.mealRating": newTotal,
+      "system.collectedMatched": true,
     });
   }
 
@@ -394,7 +485,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static async #onRollFlavor() {
     const { Die } = foundry.dice.terms;
-    const { currentPool } = this.document.system;
+    const { currentPool, collectedMatched } = this.document.system;
 
     /**@type {Promise<foundry.dice.terms.Die>[]} */
     const diceTerms = Object.entries(currentPool)
@@ -402,7 +493,10 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       .map(([k, v]) => new Die({ number: v, faces: Number(k.slice(1)) }).evaluate());
     const dice = await Promise.all(diceTerms);
 
-    return await this.document.update({ "system.dicePool": dice.map(d => d.toJSON()) });
+    return await this.document.update({
+      "system.dicePool": dice.map(d => d.toJSON())
+      , "system.collectedMatched": false
+    });
   }
 
   /**
