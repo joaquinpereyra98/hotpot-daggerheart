@@ -42,6 +42,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       modifyTokenNumber: HotpotConfig.#onModifyTokenNumber,
       collectMatched: HotpotConfig.#onCollectMatched,
       rollFlavor: HotpotConfig.#onRollFlavor,
+      modifyFlavor: HotpotConfig.#onModifyFlavor,
       finishHotpot: HotpotConfig.#onFinishHotpot,
     },
   };
@@ -111,13 +112,24 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     }).bind(this.element);
 
     this._addDiceHoverListener();
+    this._addFlavorLabelListeners();
   }
 
   /** @inheritDoc */
   _onClose(options) {
     super._onClose(options);
-     Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
-  } 
+    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
+    // Remove flavor label listeners if added to avoid leaking handlers across renders
+    try {
+      if (this._flavorLabelListenersAdded && this._flavorLabelContextHandler && this.element) {
+        this.element.removeEventListener('contextmenu', this._flavorLabelContextHandler);
+      }
+    } catch (err) {
+      // ignore removal errors
+    }
+    this._flavorLabelListenersAdded = false;
+    this._flavorLabelContextHandler = null;
+  }
 
   /**
    * Handle mouse-in and mouse-out events on a dice.
@@ -144,6 +156,55 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
           .forEach(die => die.classList.remove("hovered"));
       });
     });
+  }
+
+  /**
+   * Add delegated listeners for flavor label clicks.
+   * Left-click decreases the value on the associated input.flavor-strength
+   * Right-click (contextmenu) increases the value.
+   */
+  _addFlavorLabelListeners() {
+    // Only allow flavor modification interactions for GMs
+    if (!game.user.isGM) return;
+    const container = this.element;
+    if (!container) return;
+    
+    // Bind only once to prevent multiple handlers when the app re-renders
+    if (this._flavorLabelListenersAdded) return;
+
+    const handler = (event) => {
+      const target = event.target.closest('[data-action]');
+      if (!target) return;
+      // Prevent the native menu so right-click can be used for action
+      event.preventDefault();
+      const { action } = target.dataset;
+      const fn = this.options.actions?.[action];
+      if (fn instanceof Function) fn.call(this, event, target);
+    };
+
+    container.addEventListener('contextmenu', handler);
+    this._flavorLabelContextHandler = handler;
+    this._flavorLabelListenersAdded = true;
+  }
+
+  /**
+   * Action handler for flavor modifications.
+   * Left-click should decrease, right-click should increase.
+   * @type {ApplicationClickAction}
+   * @this HotpotConfig
+   */
+  static #onModifyFlavor(event, target) {
+    if (!game.user.isGM) return;
+    const isContext = event.type === 'contextmenu' || event.button === 2;
+    const flavorWrapper = target.closest('.flavor-tag');
+    if (!flavorWrapper) return;
+    const input = flavorWrapper.querySelector('.flavor-strength');
+    const key = input.getAttribute('name') ?? null;
+
+    let current = Number(input.value ?? 0);
+    const newVal = isContext ? current + 1 : Math.max(0, current - 1);
+    input.value = newVal;
+    return this.#submitUpdate({ [key]: newVal });
   }
 
   /**
@@ -396,7 +457,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    * @this HotpotConfig
    */
   static async #onCollectMatched() {
-    const { dicePool, currentPool,mealRating, matchedDice, collectedMatched } = this.document.system;
+    const { dicePool, currentPool, mealRating, matchedDice, collectedMatched } = this.document.system;
 
     console.log(collectedMatched)
     // Calculate totalMatch from matchedDice
@@ -432,9 +493,10 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       .map(([k, v]) => new Die({ number: v, faces: Number(k.slice(1)) }).evaluate());
     const dice = await Promise.all(diceTerms);
 
-    return await this.document.update({ 
-      "system.dicePool": dice.map(d => d.toJSON()) 
-      , "system.collectedMatched": false});
+    return await this.document.update({
+      "system.dicePool": dice.map(d => d.toJSON())
+      , "system.collectedMatched": false
+    });
   }
 
   /**
