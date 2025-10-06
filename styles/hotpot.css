@@ -15,9 +15,10 @@
     display: flex;
     border-radius: 0.5rem;
     border: 1px solid light-dark(var(--dark-blue-color), var(--gold-color));
-  /* Keep both positioning and overflow so absolutely positioned icons work and overflow is clipped */
-  position: relative;
-  overflow: hidden;
+    /* Keep both positioning and overflow so absolutely positioned icons work and overflow is clipped */
+    position: relative;
+    overflow: hidden;
+
     &.inactive {
       opacity: 0.7;
     }
@@ -92,6 +93,7 @@
       font-weight: bold;
       font-size: 15px;
     }
+
     input {
       width: calc(100% - 20px);
       border-bottom-left-radius: 0;
@@ -102,6 +104,7 @@
       text-align: center;
       font-size: 25px;
       --input-height: 1.5em;
+
       &:disabled {
         cursor: inherit;
       }
@@ -141,10 +144,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-  border: 2px solid light-dark(var(--dark-blue-color), var(--gold-color));
-  background: light-dark(white, var(--dark-blue-color));
-  transition: transform var(--magic-number);
-  color: light-dark(var(--dark-blue-color), white);
+      border: 2px solid light-dark(var(--dark-blue-color), var(--gold-color));
+      background: light-dark(white, var(--dark-blue-color));
+      transition: transform var(--magic-number);
+      color: light-dark(var(--dark-blue-color), white);
+
       &.completed {
         background: var(--gold-color);
         color: var(--dark-blue-color);
@@ -164,6 +168,7 @@
 
   &.ingredient .main-section {
     padding: 0 10px;
+
     .flavor-tags {
       display: flex;
       flex-wrap: wrap;
@@ -180,17 +185,19 @@
     .item {
       padding-bottom: 5px;
     }
+
     .item-row,
     .item-column {
       display: flex;
       align-items: center;
       text-align: center;
     }
+
     .flavor-row {
       padding: 0 5px;
       font-size: 12px;
       flex-wrap: nowrap;
-        /* Keep both positioning and overflow so absolutely positioned icons work and overflow is clipped */
+      /* Keep both positioning and overflow so absolutely positioned icons work and overflow is clipped */
       overflow-x: auto;
       gap: 10px;
     }
@@ -199,10 +206,12 @@
       flex: 1;
       text-align: left;
       padding: 5px 0px 5px 5px;
+
       .name {
         font-weight: bold;
         font-size: var(--font-size-15);
       }
+
       img {
         width: 24px;
         height: 24px;
@@ -212,13 +221,16 @@
         margin-right: 5px;
       }
     }
+
     .item-quantity {
       .quantity-control {
         padding: 0px 5px;
+
         &[disabled] {
           opacity: 0.2;
         }
       }
+
       .quantity-input {
         text-align: center;
         width: 4ch;
@@ -226,6 +238,7 @@
         --input-height: 1.5rem;
       }
     }
+
     .item-user {
       border: 1px solid light-dark(var(--dark-blue-color), var(--gold-color));
       padding: 3px 5px;
@@ -233,6 +246,7 @@
       opacity: 0.5;
       margin: 0 5px;
     }
+
     .item-controls {
       flex: 0 0 40px;
       justify-content: space-around;
@@ -361,7 +375,7 @@
       }
     }
 
-  .step-content.roll {
+    .step-content.roll {
       .inputs-containers {
         height: 80px;
         margin: 0 10px;
@@ -395,7 +409,8 @@
             cursor: inherit;
           }
         }
-  }
+      }
+
       .finish-button {
         flex: 0;
         font-size: 25px;
@@ -585,66 +600,71 @@
 
     .icon-button {
       flex: 0 0 15px;
+
       &:hover {
         font-weight: bold;
       }
     }
-  .token-input {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+  }
+    .token-input {
+      display: flex;
+      align-items: center;
+      gap: 5px;
 
-    .quantity-control {
-      cursor: pointer;
-      padding: 5px;
-      border-radius: 4px;
-      background: light-dark(var(--dark-blue-color), var(--gold-color));
-      color: light-dark(var(--beige-color), var(--dark-blue-color));
-      font-size: 20px;
-      text-align: center;
-
-      &:hover {
-        background: light-dark(var(--gold-color), var(--dark-blue-color));
-        color: light-dark(var(--dark-blue-color), var(--beige-color));
-      }
-
-      &[disabled] {
-        cursor: default;
-        opacity: 0.4;
+      .quantity-control {
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        background: light-dark(var(--dark-blue-color), var(--gold-color));
+        color: light-dark(var(--beige-color), var(--dark-blue-color));
+        font-size: 20px;
+        text-align: center;
 
         &:hover {
-          background: light-dark(var(--dark-blue-color), var(--gold-color));
-          color: light-dark(var(--beige-color), var(--dark-blue-color));
+          background: light-dark(var(--gold-color), var(--dark-blue-color));
+          color: light-dark(var(--dark-blue-color), var(--beige-color));
+        }
+
+        &[disabled] {
+          cursor: default;
+          opacity: 0.4;
+
+          &:hover {
+            background: light-dark(var(--dark-blue-color), var(--gold-color));
+            color: light-dark(var(--beige-color), var(--dark-blue-color));
+          }
         }
       }
     }
-  }
 
-  &.chat-msg {
-    padding-top: 5px;
-    .button-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 10px;
-  gap: 5px;
+    &.chat-message {
+      padding-top: 5px;
 
-      button {
-        font-size: large;
-        background: light-dark(transparent, var(--gold-color));
-        &:not(:hover)&:not(:disabled) {
+      .button-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 10px;
+        gap: 5px;
+
+        button {
+          font-size: large;
           background: light-dark(transparent, var(--gold-color));
+
+          &:not(:hover)&:not(:disabled) {
+            background: light-dark(transparent, var(--gold-color));
+          }
         }
       }
-    }
 
-    .scrollable {
-      max-height: 100px;
-      min-height: 30px;
-    }
-    .ingredients-list {
-      margin: 0;
-      padding: 0;
+      .scrollable {
+        max-height: 100px;
+        min-height: 30px;
+      }
+
+      .ingredients-list {
+        margin: 0;
+        padding: 0;
+      }
     }
   }
-}
