@@ -51,7 +51,8 @@
           "recipe.description"
         ],
         "gmOnlyFields": [
-          "completed"
+          "completed",
+          "collectedMatched"
         ]
       }
     }
@@ -68,13 +69,5 @@
       ]
     }
   },
-  "packs": [
-    {
-      "name": "macros",
-      "label": "Hotpot Macros",
-      "path": "packs/hotpot-macro",
-      "type": "Macro",
-      "system": "daggerheart"
-    }
-  ]
+  "packs": []
 }

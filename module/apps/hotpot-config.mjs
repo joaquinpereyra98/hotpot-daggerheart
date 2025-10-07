@@ -42,8 +42,11 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       modifyTokenNumber: HotpotConfig.#onModifyTokenNumber,
       collectMatched: HotpotConfig.#onCollectMatched,
       rollFlavor: HotpotConfig.#onRollFlavor,
-      modifyFlavor: HotpotConfig.#onModifyFlavor,
       finishHotpot: HotpotConfig.#onFinishHotpot,
+      modifyFlavor: {
+        buttons: [0,2],
+        handler: HotpotConfig.#onModifyFlavor
+      }
     },
   };
 
@@ -112,7 +115,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     }).bind(this.element);
 
     this._addDiceHoverListener();
-    this._addFlavorLabelListeners();
+    // this._addFlavorLabelListeners();
   }
 
   /** @inheritDoc */
@@ -159,52 +162,18 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   }
 
   /**
-   * Add delegated listeners for flavor label clicks.
-   * Left-click decreases the value on the associated input.flavor-strength
-   * Right-click (contextmenu) increases the value.
-   */
-  _addFlavorLabelListeners() {
-    // Only allow flavor modification interactions for GMs
-    if (!game.user.isGM) return;
-    const container = this.element;
-    if (!container) return;
-    
-    // Bind only once to prevent multiple handlers when the app re-renders
-    if (this._flavorLabelListenersAdded) return;
-
-    const handler = (event) => {
-      const target = event.target.closest('[data-action]');
-      if (!target) return;
-      // Prevent the native menu so right-click can be used for action
-      event.preventDefault();
-      const { action } = target.dataset;
-      const fn = this.options.actions?.[action];
-      if (fn instanceof Function) fn.call(this, event, target);
-    };
-
-    container.addEventListener('contextmenu', handler);
-    this._flavorLabelContextHandler = handler;
-    this._flavorLabelListenersAdded = true;
-  }
-
-  /**
    * Action handler for flavor modifications.
    * Left-click should decrease, right-click should increase.
    * @type {ApplicationClickAction}
    * @this HotpotConfig
    */
-  static #onModifyFlavor(event, target) {
+  static async #onModifyFlavor(event, target) {
     if (!game.user.isGM) return;
+    const flavor = target.innerHTML.trim()
     const isContext = event.type === 'contextmenu' || event.button === 2;
-    const flavorWrapper = target.closest('.flavor-tag');
-    if (!flavorWrapper) return;
-    const input = flavorWrapper.querySelector('.flavor-strength');
-    const key = input.getAttribute('name') ?? null;
-
-    let current = Number(input.value ?? 0);
+    let current = this.document.system.currentPool[flavor] ?? 0;
     const newVal = isContext ? current + 1 : Math.max(0, current - 1);
-    input.value = newVal;
-    return this.#submitUpdate({ [key]: newVal });
+    return this.#submitUpdate({ [`system.currentPool.${flavor}`]: newVal });
   }
 
   /**
@@ -442,13 +411,8 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static #onModifyTokenNumber(_, target) {
     const addend = target.dataset.modification === "increase" ? 1 : -1;
-    // Find the input with the class 'input-tokens' closest to the button
-    const input = target.closest("div")?.querySelector(".input-tokens") || target.parentElement.querySelector(".input-tokens");
-    if (!input) return;
-    let currentTokens = Number(input.value ?? 0);
+    let currentTokens = this.document.system.tokens;
     const newTokenCount = Math.max(0, currentTokens + addend);
-
-    input.value = newTokenCount;
     return this.#submitUpdate({ "system.tokens": newTokenCount });
   }
 
@@ -458,13 +422,8 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static async #onCollectMatched() {
     const { dicePool, currentPool, mealRating, matchedDice, collectedMatched } = this.document.system;
-
-    console.log(collectedMatched)
     // Calculate totalMatch from matchedDice
     const newTotal = mealRating + Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
-    console.log("-----totalMatch-----")
-    console.log(newTotal)
-    console.log("-----totalMatch-----")
     // Update the dice pool by removing matched dice
     const newPool = dicePool.reduce((acc, d) => ({
       ...acc,
