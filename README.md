@@ -42,7 +42,7 @@ https://github.com/joaquinpereyra98/hotpot-daggerheart/releases/latest/download/
    Players collect **ingredients** (items) on their actor sheets as they explore dungeons and complete adventures.
 3. Make a Feast
    
-   During downtime, the GM runs the next command on a script macro: `HOTPOT.api.startFeast()` to begin the cooking process. A premade macro has been provided and can be found in the Hotpot Macros compendium.
+   During downtime, the GM runs the next command on a script macro: `HOTPOT.api.startFeast()` to begin the cooking process.
 4. Contribute ingredients
    
    In the **Ingredient Step**, players drag ingredients from their actor sheets into the recipe to contribute them to the feast.
