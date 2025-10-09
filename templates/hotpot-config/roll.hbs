@@ -63,8 +63,8 @@
       <legend>Current Pool</legend>
       <div class="current-pool-dice">
         {{#each document.system.currentPool as |v k|}}
-        <div class="flavor-tag {{#unless v}}inactive{{/unless}}" data-flavor="{{key}}">
-          <span class="flavor-label" data-action="modifyFlavor"> {{k}}</span>
+        <div class="flavor-tag {{#unless v}}inactive{{/unless}}" data-flavor="{{k}}">
+          <span class="flavor-label"  data-action="modifyFlavor">{{k}}</span>
           <input class="flavor-strength" type="number" name="system.currentPool.{{k}}" value="{{v}}" {{disabled (not
             @root.isGM)}}>
         </div>

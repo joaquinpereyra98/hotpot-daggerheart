@@ -169,7 +169,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static async #onModifyFlavor(event, target) {
     if (!game.user.isGM) return;
-    const flavor = target.innerHTML.trim()
+    const flavor = target.parentElement.getAttribute("data-flavor");
     const isContext = event.type === 'contextmenu' || event.button === 2;
     let current = this.document.system.currentPool[flavor] ?? 0;
     const newVal = isContext ? current + 1 : Math.max(0, current - 1);
