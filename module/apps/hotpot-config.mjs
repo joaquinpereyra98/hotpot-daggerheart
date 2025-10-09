@@ -117,6 +117,12 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     this._addDiceHoverListener();
   }
 
+  /** @inheritDoc */
+  _onClose(options) {
+    super._onClose(options);
+    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
+  } 
+
   /**
    * Handle mouse-in and mouse-out events on a dice.
    * @param {PointerEvent} event
