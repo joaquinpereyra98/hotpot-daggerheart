@@ -115,23 +115,6 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     }).bind(this.element);
 
     this._addDiceHoverListener();
-    // this._addFlavorLabelListeners();
-  }
-
-  /** @inheritDoc */
-  _onClose(options) {
-    super._onClose(options);
-    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
-    // Remove flavor label listeners if added to avoid leaking handlers across renders
-    try {
-      if (this._flavorLabelListenersAdded && this._flavorLabelContextHandler && this.element) {
-        this.element.removeEventListener('contextmenu', this._flavorLabelContextHandler);
-      }
-    } catch (err) {
-      // ignore removal errors
-    }
-    this._flavorLabelListenersAdded = false;
-    this._flavorLabelContextHandler = null;
   }
 
   /**
@@ -295,7 +278,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     context.matchedDice = matchedDice;
     context.totalMatch = Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
     // Track if matched dice have already been collected
-    context.collectedMatched = this.document.system.collectedMatched ?? (context.totalMatch === 0);
+    context.collectedMatched = collectedMatched ?? (context.totalMatch === 0);
   }
 
   async _prepareRecordContext(context, _options) {
@@ -421,7 +404,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    * @this HotpotConfig
    */
   static async #onCollectMatched() {
-    const { dicePool, currentPool, mealRating, matchedDice, collectedMatched } = this.document.system;
+    const { dicePool, currentPool, mealRating, matchedDice } = this.document.system;
     // Calculate totalMatch from matchedDice
     const newTotal = mealRating + Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
     // Update the dice pool by removing matched dice
@@ -444,7 +427,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static async #onRollFlavor() {
     const { Die } = foundry.dice.terms;
-    const { currentPool, collectedMatched } = this.document.system;
+    const { currentPool } = this.document.system;
 
     /**@type {Promise<foundry.dice.terms.Die>[]} */
     const diceTerms = Object.entries(currentPool)
