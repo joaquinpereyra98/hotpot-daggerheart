@@ -17,11 +17,9 @@ foundry.utils.setProperty(
     apps: moduleToObject(apps, false),
     socket: moduleToObject(socket, false),
     hooks: moduleToObject(hooks, false),
-    api: {
-      startFeast: data.HotpotMessageData.create,
-    },
-  }
-)
+    api: { startFeast: data.HotpotMessageData.create },
+  },
+);
 
 Hooks.on("init", () => {
   const { data, socket, apps } = HOTPOT;

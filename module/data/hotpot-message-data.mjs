@@ -23,8 +23,8 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
         openHotpot: HotpotMessageData.#onOpenHotpot,
         toggleCompleted: HotpotMessageData.#onToggleCompleted,
         openCookbook: HotpotMessageData.#onOpenCookbook,
-      }
-    }
+      },
+    };
   }
 
   /**
@@ -42,29 +42,63 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**@override */
   static defineSchema() {
-    const { TypedObjectField, SchemaField, DocumentUUIDField, StringField, NumberField, BooleanField, ArrayField, HTMLField, ObjectField, ForeignDocumentField } = foundry.data.fields;
+    const f = foundry.data.fields;
     return {
-      recipe: new SchemaField({
-        name: new StringField({ initial: "New Recipe" }),
-        description: new HTMLField(),
-        journal: new ForeignDocumentField(foundry.documents.BaseJournalEntry, { required: true }),
+      recipe: new f.SchemaField({
+        name: new f.StringField({ initial: "New Recipe" }),
+        description: new f.HTMLField(),
+        journal: new f.ForeignDocumentField(foundry.documents.BaseJournalEntry, { required: true }),
       }),
-      completed: new BooleanField({ gmOnly: true }),
-      ingredients: new TypedObjectField(new SchemaField({
-        uuid: new DocumentUUIDField({ embedded: true, type: "Item", blank: false, }),
-        quantity: new NumberField({ initial: 1, integer: true, nullable: false, required: true })
+      completed: new f.BooleanField({ gmOnly: true }),
+      ingredients: new f.TypedObjectField(new f.SchemaField({
+        uuid: new f.DocumentUUIDField({
+          embedded: true,
+          type: "Item",
+          blank: false, 
+        }),
+        quantity: new f.NumberField({
+          initial: 1,
+          integer: true,
+          nullable: false,
+          required: true, 
+        }),
       })),
-      currentPool: new SchemaField(
+      currentPool: new f.SchemaField(
         Object.values(CONFIG.HOTPOT.flavors).reduce((acc, v) => {
-          acc[`d${v.dieFace}`] = new NumberField({ initial: 0, integer: true, nullable: false, required: true })
+          acc[`d${v.dieFace}`] = new f.NumberField({
+            initial: 0,
+            integer: true,
+            nullable: false,
+            required: true, 
+          });
           return acc;
         }, {})),
-      mealRating: new NumberField({ integer: true, initial: 0, nullable: false, required: true }),
-      dicePool: new ArrayField(new ObjectField({ validate: (v) => v._evaluated, validationError: "Must be a evaluated Die" })),
-      tokens: new NumberField({ initial: 0, nullable: false, integer: true, min: 0 }),
-      step: new NumberField({ initial: 0, min: 0, max: CONSTANTS.STEPS.length - 1 }),
-      collectedMatched: new BooleanField({ gmOnly: true, initial: false }),
-    }
+      mealRating: new f.NumberField({
+        integer: true,
+        initial: 0,
+        nullable: false,
+        required: true, 
+      }),
+      dicePool: new f.ArrayField(new f.ObjectField({
+        validate: (v) => v._evaluated,
+        validationError: "Must be a evaluated Die", 
+      })),
+      tokens: new f.NumberField({
+        initial: 0,
+        nullable: false,
+        integer: true,
+        min: 0, 
+      }),
+      step: new f.NumberField({
+        initial: 0,
+        min: 0,
+        max: CONSTANTS.STEPS.length - 1, 
+      }),
+      collectedMatched: new f.BooleanField({
+        gmOnly: true,
+        initial: false, 
+      }),
+    };
   }
 
   /**@type {HotpotConfig} */
@@ -91,7 +125,10 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     this.matchedDice = this.dicePool.flatMap(die =>
       die.results
         .filter(r => r.matched)
-        .map(r => ({ faces: die.faces, result: r.result }))
+        .map(r => ({
+          faces: die.faces,
+          result: r.result, 
+        })),
     ).reduce((acc, r) => {
       if (!acc[r.result]) acc[r.result] = [];
       acc[r.result].push(r.faces);
@@ -230,7 +267,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     const category = findDocByFlag(journal.categories, CONSTANTS.JOURNAL_FLAGS.CATEGORY) ?? await this.#createCategory(journal);
 
     const flavorProfile = Object.fromEntries(
-      Object.entries(this.totals).map(([k, v]) => [k, v.strength])
+      Object.entries(this.totals).map(([k, v]) => [k, v.strength]),
     );
 
     const flavorProfileText = `<h2>Flavor Profile</h2> ${Object.values(this.totals).map(v => `<p>${v.label}(d${v.dieFace}): ${v.strength}</p>`).join("")}`;
@@ -238,10 +275,8 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     if (page) {
       return page.update({
         "text.content": description + flavorProfileText,
-        [`flags.${CONSTANTS.MODULE_ID}`]: {
-          [CONSTANTS.JOURNAL_FLAGS.FLAVORS]: flavorProfile,
-        }
-      })
+        [`flags.${CONSTANTS.MODULE_ID}`]: { [CONSTANTS.JOURNAL_FLAGS.FLAVORS]: flavorProfile },
+      });
     }
     return JournalEntryPage.implementation.create({
       name,
@@ -250,7 +285,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       [`flags.${CONSTANTS.MODULE_ID}`]: {
         [CONSTANTS.JOURNAL_FLAGS.FLAVORS]: flavorProfile,
         [CONSTANTS.JOURNAL_FLAGS.MESSAGE]: this.#document.id,
-      }
+      },
     }, { parent: journal });
   }
 
@@ -266,7 +301,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     return JournalEntryCategory.implementation.create({
       name: "Hotpot Recipes",
       sort: (categories.length + 1) * CONST.SORT_INTEGER_DENSITY,
-      [`flags.${CONSTANTS.MODULE_ID}.${CONSTANTS.JOURNAL_FLAGS.CATEGORY}`]: true
+      [`flags.${CONSTANTS.MODULE_ID}.${CONSTANTS.JOURNAL_FLAGS.CATEGORY}`]: true,
     }, { parent });
   }
 
@@ -288,7 +323,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       "system.step": 0,
     }, { inplace: false });
 
-    return await cls.create(createData)
+    return await cls.create(createData);
   }
 
   /** @inheritDoc */
@@ -433,7 +468,10 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
             ? "completed"
             : "inactive";
 
-      return { ...s, classes: status };
+      return {
+        ...s,
+        classes: status, 
+      };
     });
 
     return {
@@ -441,7 +479,8 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       system: this,
       recipe,
       steps,
-      canDelete, canClose,
+      canDelete,
+      canClose,
       message: data,
       user: game.user,
       author: doc.author,
@@ -450,10 +489,10 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
         doc.style === CONST.CHAT_MESSAGE_STYLES.IC ? "ic" : null,
         doc.style === CONST.CHAT_MESSAGE_STYLES.EMOTE ? "emote" : null,
         isWhisper ? "whisper" : null,
-        this.#document.blind ? "blind" : null
+        this.#document.blind ? "blind" : null,
       ].filterJoin(" "),
       isWhisper,
-      whisperTo: doc.whisper.map(u => game.users.get(u)?.name).filterJoin(", ")
+      whisperTo: doc.whisper.map(u => game.users.get(u)?.name).filterJoin(", "),
     };
   }
 
@@ -467,9 +506,9 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
         const target = event.currentTarget;
         const { action } = target.dataset;
         const fn = HotpotMessageData.metadata.actions[action];
-        if (fn instanceof Function) fn.call(this.#document, event, target)
-      })
-    })
+        if (fn instanceof Function) fn.call(this.#document, event, target);
+      });
+    });
 
     const finishBtn = html.querySelector(".finish-button");
     if (finishBtn) {

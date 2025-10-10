@@ -1,8 +1,10 @@
+/**FOUNDRY TYPES */
 import "@client/global.mjs";
 import Canvas from "@client/canvas/board.mjs";
 import * as globalConfig from "@client/config.mjs";
-import HOTPOT_CONFIG from "./module/config.mjs";
 
+/**MODULE TYPES */
+import HOTPOT_CONFIG from "./module/config.mjs";
 import * as apps from "./module/apps/_module.mjs";
 import * as data from "./module/data/_module.mjs";
 import * as socket from "./module/sockets-callbacks.mjs";

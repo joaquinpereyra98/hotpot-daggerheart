@@ -1,4 +1,4 @@
-import CONSTANTS from '../constants.mjs';
+import CONSTANTS from "../constants.mjs";
 
 /**
  * Factory function that creates a custom Item Sheet for ingredients.
@@ -16,7 +16,7 @@ export default function createIngredientSheet() {
   class IngredientSheet extends BaseItemSheet {
     /**@inheritdoc */
     static DEFAULT_OPTIONS = {
-      classes: ['ingredient', "hotpot"],
+      classes: ["ingredient", "hotpot"],
       position: { width: 550 },
       actions: {
         addFlavor: IngredientSheet.#onAddFlavor,
@@ -26,33 +26,39 @@ export default function createIngredientSheet() {
         {
           handler: IngredientSheet.#getFlavorContextOptions,
           selector: "[data-flavor]",
-          options: { parentClassHooks: false, fixed: true }
-        }
-      ]
+          options: {
+            parentClassHooks: false,
+            fixed: true, 
+          },
+        },
+      ],
     };
 
     /**@override */
-    static TABS = {}
+    static TABS = {};
 
     /**@override */
     static PARTS = {
       header: { template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/header.hbs` },
-      main: { template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/main.hbs` }
+      main: { template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/main.hbs` },
     };
 
     /**@inheritdoc */
     async _prepareContext(options) {
       const context = await super._prepareContext(options);
       context.flavorChoices = [{ key: "" },
-      ...Object.entries(CONFIG.HOTPOT.flavors)
-        .map(([key, v]) => ({ key, label: `${v.label} (d${v.dieFace})` }))
-        .filter(f => !Object.keys(this.item.system.flavors).includes(f.key))];
+        ...Object.entries(CONFIG.HOTPOT.flavors)
+          .map(([key, v]) => ({
+            key,
+            label: `${v.label} (d${v.dieFace})`, 
+          }))
+          .filter(f => !Object.keys(this.item.system.flavors).includes(f.key))];
 
       context.enrichedDescription = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.description, {
         relativeTo: this.item,
         rollData: this.item.getRollData(),
-        secrets: this.item.isOwner
-      })
+        secrets: this.item.isOwner,
+      });
 
       return context;
     }
@@ -69,14 +75,14 @@ export default function createIngredientSheet() {
    */
     static #getFlavorContextOptions() {
       return [{
-        name: 'CONTROLS.CommonDelete',
-        icon: '<i class="fa-solid fa-trash"></i>',
+        name: "CONTROLS.CommonDelete",
+        icon: "<i class=\"fa-solid fa-trash\"></i>",
         callback: async target => {
           const { flavor } = target.closest("[data-flavor]").dataset;
           if (!flavor) return;
           await this.document.update({ [`system.flavors.-=${flavor}`]: null });
-        }
-      }]
+        },
+      }];
     }
 
 
@@ -93,9 +99,7 @@ export default function createIngredientSheet() {
       /**@type {HTMLSelectElement} */
       const select = this.element.querySelector(`[id="${this.id}-newFlavorType"]`);
       if (!select.value) return;
-      return await this.item.update({
-        [`system.flavors.${select.value}.strength`]: 1
-      });
+      return await this.item.update({ [`system.flavors.${select.value}.strength`]: 1 });
     }
 
     /**

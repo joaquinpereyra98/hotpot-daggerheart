@@ -1,0 +1,16 @@
+{
+  "eslint.enable": true,
+  "eslint.validate": ["javascript", "handlebars", "css", "markdown"],
+  "[json]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[handlebars]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  }
+}

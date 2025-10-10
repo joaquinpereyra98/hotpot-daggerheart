@@ -19,14 +19,12 @@ const CONSTANTS = foundry.utils.deepFreeze({
     id: "roll",
     icon: "fa-solid fa-dice",
   }],
-  queries: {
-    updateHotpotAsGm: "hotpot-daggerheart.updateHotpotAsGm"
-  },
+  queries: { updateHotpotAsGm: "hotpot-daggerheart.updateHotpotAsGm" },
   JOURNAL_FLAGS: {
     CATEGORY: "isRecipeCategory",
     FLAVORS: "flavorProfile",
     MESSAGE: "sourceMessage",
-  }
+  },
 });
 
 export default CONSTANTS;

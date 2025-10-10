@@ -31,42 +31,25 @@
     "requires": [],
     "recommends": []
   },
-  "esmodules": [
-    "hotpot.mjs"
-  ],
-  "styles": [
-    "styles/hotpot.css"
-  ],
+  "esmodules": ["hotpot.mjs"],
+  "styles": ["styles/hotpot.css"],
   "documentTypes": {
     "Item": {
       "ingredient": {
-        "htmlFields": [
-          "description"
-        ]
+        "htmlFields": ["description"]
       }
     },
     "ChatMessage": {
       "hotpot": {
-        "htmlFields": [
-          "recipe.description"
-        ],
-        "gmOnlyFields": [
-          "completed",
-          "collectedMatched"
-        ]
+        "htmlFields": ["recipe.description"],
+        "gmOnlyFields": ["completed", "collectedMatched"]
       }
     }
   },
   "flags": {
     "hotReload": {
-      "extensions": [
-        "css",
-        "hbs"
-      ],
-      "paths": [
-        "styles/hotpot.css",
-        "templates/"
-      ]
+      "extensions": ["css", "hbs"],
+      "paths": ["styles/hotpot.css", "templates/"]
     }
   }
 }

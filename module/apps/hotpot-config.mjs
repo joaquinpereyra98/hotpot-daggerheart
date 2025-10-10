@@ -1,5 +1,4 @@
 import CONSTANTS from "../constants.mjs";
-import HotpotMessageData from "../data/hotpot-message-data.mjs";
 import IngredientModel from "../data/ingredient.mjs";
 
 const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -31,9 +30,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       width: 560,
       height: 530,
     },
-    form: {
-      submitOnChange: true,
-    },
+    form: { submitOnChange: true },
     actions: {
       nextStep: HotpotConfig.#onNextStep,
       previousStep: HotpotConfig.#onPreviousStep,
@@ -43,31 +40,29 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       collectMatched: HotpotConfig.#onCollectMatched,
       rollFlavor: HotpotConfig.#onRollFlavor,
       finishHotpot: HotpotConfig.#onFinishHotpot,
-      modifyFlavor: {
-        buttons: [0,2],
-        handler: HotpotConfig.#onModifyFlavor
-      }
+      modifyDiePool: {
+        buttons: [0, 2],
+        handler: HotpotConfig.#onModifyDiePool,
+      },
     },
   };
 
   /**@type {Record<string, HandlebarsTemplatePart>} */
   static PARTS = {
-    header: {
-      template: `${CONSTANTS.TEMPLATE_PATH}/hotpot-config/header.hbs`,
-    },
+    header: { template: `${CONSTANTS.TEMPLATE_PATH}/hotpot-config/header.hbs` },
     ingredients: {
       template: `${CONSTANTS.TEMPLATE_PATH}/hotpot-config/ingredients.hbs`,
-      scrollable: [".scrollable"]
+      scrollable: [".scrollable"],
     },
     record: {
       template: `${CONSTANTS.TEMPLATE_PATH}/hotpot-config/record.hbs`,
-      scrollable: [".scrollable"]
+      scrollable: [".scrollable"],
     },
     roll: {
       template: `${CONSTANTS.TEMPLATE_PATH}/hotpot-config/roll.hbs`,
-      scrollable: [".scrollable"]
+      scrollable: [".scrollable"],
     },
-  }
+  };
 
   /* -------------------------------------------- */
 
@@ -101,7 +96,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /** @inheritDoc */
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
-    Object.values(this.document.system.ingredients).forEach(i => i.document.apps[this.id] = this)
+    Object.values(this.document.system.ingredients).forEach(i => i.document.apps[this.id] = this);
   }
 
   /** @inheritDoc */
@@ -109,9 +104,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     await super._onRender(context, options);
     new foundry.applications.ux.DragDrop.implementation({
       dropSelector: ".ingredients-section",
-      callbacks: {
-        drop: this._onDrop.bind(this)
-      }
+      callbacks: { drop: this._onDrop.bind(this) },
     }).bind(this.element);
 
     this._addDiceHoverListener();
@@ -120,7 +113,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /** @inheritDoc */
   _onClose(options) {
     super._onClose(options);
-    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
+    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id]);
   }
 
   /**
@@ -151,21 +144,6 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   }
 
   /**
-   * Action handler for flavor modifications.
-   * Left-click should decrease, right-click should increase.
-   * @type {ApplicationClickAction}
-   * @this HotpotConfig
-   */
-  static async #onModifyFlavor(event, target) {
-    if (!game.user.isGM) return;
-    const flavor = target.parentElement.getAttribute("data-flavor");
-    const isContext = event.type === 'contextmenu' || event.button === 2;
-    let current = this.document.system.currentPool[flavor] ?? 0;
-    const newVal = isContext ? current + 1 : Math.max(0, current - 1);
-    return this.#submitUpdate({ [`system.currentPool.${flavor}`]: newVal });
-  }
-
-  /**
    * An event that occurs when data is dropped into a drop target.
    * @param {DragEvent} event
    * @returns {Promise<void>}
@@ -176,7 +154,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
 
     // Dropped Documents
     const documentClass = foundry.utils.getDocumentClass(data.type);
-    if (!documentClass) return
+    if (!documentClass) return;
 
     const { collection, embedded } = foundry.utils.parseUuid(data.uuid);
     if (collection instanceof foundry.documents.collections.CompendiumCollection) return ui.notifications.warn("The document must exist in the world, it is not a compendium");
@@ -189,7 +167,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       [`system.ingredients.${doc.id}`]: {
         uuid: doc.uuid,
         quantity: 1,
-      }
+      },
     });
   }
 
@@ -217,7 +195,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       const parentSort = a.document.parent.name.localeCompare(b.document.parent.name);
       if (parentSort !== 0) return parentSort;
       return a.document.name.localeCompare(b.document.name);
-    })
+    });
 
     context.isGM = game.user.isGM;
 
@@ -226,7 +204,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
 
   /**@inheritdoc */
   async _preparePartContext(partId, context, options) {
-    context = await super._preparePartContext(partId, context, options)
+    context = await super._preparePartContext(partId, context, options);
     context.step = {
       ...CONSTANTS.STEPS.find(({ id }) => id === partId),
       class: `${partId}${this.currentStep.id === partId ? " active" : ""}`,
@@ -241,7 +219,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
         break;
       case "record":
         await this._prepareRecordContext(context, options);
-        break
+        break;
     }
     return context;
   }
@@ -269,7 +247,11 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       else if (s.index === nextStep?.index) action = "nextStep";
       if (action && this.document.isOwner) classes.push("clickable");
 
-      return { ...s, classes: classes.join(" "), action };
+      return {
+        ...s,
+        classes: classes.join(" "),
+        action, 
+      };
     });
   }
 
@@ -287,8 +269,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     context.dicePoolIsEmpty = !Object.values(currentPool).some(v => v > 0);
     context.matchedDice = matchedDice;
     context.totalMatch = Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
-    // Track if matched dice have already been collected
-    context.collectedMatched = collectedMatched ?? (context.totalMatch === 0);
+    context.collectedMatched = collectedMatched ?? context.totalMatch;
   }
 
   /**
@@ -314,7 +295,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       enriched: await TextEditor.implementation.enrichHTML(recipe.description, {
         relativeTo: this.document,
         secrets: game.user.isGM,
-      })
+      }),
     };
   }
 
@@ -330,7 +311,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
 
     return gm.query(CONSTANTS.queries.updateHotpotAsGm, {
       messageId: this.document.id,
-      data: updateData,
+      data: submitData,
     });
   }
 
@@ -375,7 +356,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     if (!event.shiftKey) {
       const confirm = await DialogV2.confirm({
         window: { title: "Previous Step" },
-        content: "<p>Return to a previous step? This could reset some fields.</p>"
+        content: "<p>Return to a previous step? This could reset some fields.</p>",
       });
       if (!confirm) return;
     }
@@ -390,9 +371,25 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     const addend = target.dataset.modification === "increase" ? 1 : -1;
     const { itemId } = target.closest("[data-item-id]").dataset;
     if (!itemId) return;
-    const { quantity, document } = this.document.system.ingredients[itemId]
+    const { quantity, document } = this.document.system.ingredients[itemId];
     const newQty = Math.clamp(quantity + addend, 1, document.system.quantity);
     return this.#submitUpdate({ [`system.ingredients.${itemId}.quantity`]: newQty });
+  }
+
+  /**
+   * Action handler for flavor modifications.
+   * Left-click should decrease, right-click should increase.
+   * @type {ApplicationClickAction}
+   * @this HotpotConfig
+   */
+  static async #onModifyDiePool(event, target) {
+    if (!game.user.isGM) return;
+    const { key } = target.closest("[data-key]").dataset;
+    const addend = event.button === 2 ? 1 : -1;
+
+    const current = this.document.system.currentPool[key] ?? 0;
+    const newVal = Math.max(0, current + addend);
+    return this.#submitUpdate({ [`system.currentPool.${key}`]: newVal });
   }
 
   /**
@@ -411,9 +408,9 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static #onModifyTokenNumber(_, target) {
     const addend = target.dataset.modification === "increase" ? 1 : -1;
-    let currentTokens = this.document.system.tokens;
-    const newTokenCount = Math.max(0, currentTokens + addend);
-    return this.#submitUpdate({ "system.tokens": newTokenCount });
+    const currentTokens = this.document.system.tokens;
+    const newTokens = Math.max(0, currentTokens + addend);
+    return this.#submitUpdate({ "system.tokens": newTokens });
   }
 
   /**
@@ -427,7 +424,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     // Update the dice pool by removing matched dice
     const newPool = dicePool.reduce((acc, d) => ({
       ...acc,
-      [`d${d.faces}`]: Math.max(0, currentPool[`d${d.faces}`] - d.results.filter(r => r.matched).length)
+      [`d${d.faces}`]: Math.max(0, currentPool[`d${d.faces}`] - d.results.filter(r => r.matched).length),
     }), {});
 
     // Update mealRating with totalMatch and mark collectedMatched as true
@@ -449,12 +446,15 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     /**@type {Promise<foundry.dice.terms.Die>[]} */
     const diceTerms = Object.entries(currentPool)
       .filter(([_, v]) => v > 0)
-      .map(([k, v]) => new Die({ number: v, faces: Number(k.slice(1)) }).evaluate());
+      .map(([k, v]) => new Die({
+        number: v,
+        faces: Number(k.slice(1)), 
+      }).evaluate());
     const dice = await Promise.all(diceTerms);
 
     return await this.document.update({
-      "system.dicePool": dice.map(d => d.toJSON())
-      , "system.collectedMatched": false
+      "system.dicePool": dice.map(d => d.toJSON()),
+      "system.collectedMatched": false,
     });
   }
 
@@ -468,7 +468,6 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     const system = this.document.system;
 
     if (system.recipe.journal) await system._createJournal();
-
     await this.document.update({ "system.completed": true });
     return await this.close();
   }

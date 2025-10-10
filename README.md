@@ -11,7 +11,7 @@ Hotpot add the mechanics of the Beast Feast Frame to be able to play on the Dagg
   A new item subtype, Ingredients, has been added to the system and can now be tracked directly from the character sheet.
 
 - **Making a Feast!**
-  
+  <!-- eslint-disable-next-line markdown/no-missing-label-refs -->
   >_[Serves everyone the same, nondescript slop] For the appetizer, Caesar salad, escargot, and your Oriental spring rolls._
   
    The module allows you to create Hotpots and manage the feasts
@@ -29,6 +29,7 @@ You can manually install the module by following these steps:
 1. Inside Foundry, select the Game Modules tab in the Configuration and Setup menu
 2. Click the Install Module button and enter the following URL:
 
+<!-- eslint-disable-next-line markdown/fenced-code-language -->
 ```
 https://github.com/joaquinpereyra98/hotpot-daggerheart/releases/latest/download/module.json
 ```
