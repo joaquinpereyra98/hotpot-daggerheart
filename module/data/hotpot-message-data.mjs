@@ -63,6 +63,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       dicePool: new ArrayField(new ObjectField({ validate: (v) => v._evaluated, validationError: "Must be a evaluated Die" })),
       tokens: new NumberField({ initial: 0, nullable: false, integer: true, min: 0 }),
       step: new NumberField({ initial: 0, min: 0, max: CONSTANTS.STEPS.length - 1 }),
+      collectedMatched: new BooleanField({ gmOnly: true, initial: false }),
     }
   }
 

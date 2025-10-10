@@ -66,7 +66,7 @@ https://github.com/joaquinpereyra98/hotpot-daggerheart/releases/latest/download/
    
    The result total is automatically added to the Meal Rating. And the dice are removed from the Current Pool.
 5. If a roll produces no matches, you must remove a die or spend a token:
-   - Remove a Die: Manually lower the count of one die in the Current Pool.
+   - Remove a Die: Manually lower the count of one die in the Current Pool. Dice can be easily removed/added with a left/right click of the mouse over the die sizes in the "Current Pool" section.
    - Spend a Token: Discount a token instead of discarding a die.
      After discarding or spending, click Roll again to continue.
 6. With the remaining dice still in the Current Pool, click Roll again.
