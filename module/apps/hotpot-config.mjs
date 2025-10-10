@@ -39,9 +39,14 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       previousStep: HotpotConfig.#onPreviousStep,
       modifyItemQuantity: HotpotConfig.#onModifyItemQuantity,
       removeIngredient: HotpotConfig.#onRemoveIngredient,
+      modifyTokenNumber: HotpotConfig.#onModifyTokenNumber,
       collectMatched: HotpotConfig.#onCollectMatched,
       rollFlavor: HotpotConfig.#onRollFlavor,
       finishHotpot: HotpotConfig.#onFinishHotpot,
+      modifyFlavor: {
+        buttons: [0,2],
+        handler: HotpotConfig.#onModifyFlavor
+      }
     },
   };
 
@@ -115,7 +120,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /** @inheritDoc */
   _onClose(options) {
     super._onClose(options);
-     Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
+    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
   } 
 
   /**
@@ -143,6 +148,21 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
           .forEach(die => die.classList.remove("hovered"));
       });
     });
+  }
+
+  /**
+   * Action handler for flavor modifications.
+   * Left-click should decrease, right-click should increase.
+   * @type {ApplicationClickAction}
+   * @this HotpotConfig
+   */
+  static async #onModifyFlavor(event, target) {
+    if (!game.user.isGM) return;
+    const flavor = target.parentElement.getAttribute("data-flavor");
+    const isContext = event.type === 'contextmenu' || event.button === 2;
+    let current = this.document.system.currentPool[flavor] ?? 0;
+    const newVal = isContext ? current + 1 : Math.max(0, current - 1);
+    return this.#submitUpdate({ [`system.currentPool.${flavor}`]: newVal });
   }
 
   /**
@@ -257,12 +277,14 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    * @param {HandlebarsRenderOptions} options 
    */
   async _prepareRollContext(context, _options) {
-    const { dicePool, currentPool, matchedDice } = this.document.system;
+    const { dicePool, currentPool, matchedDice, collectedMatched } = this.document.system;
 
     context.dice = dicePool;
     context.dicePoolIsEmpty = !Object.values(currentPool).some(v => v > 0);
     context.matchedDice = matchedDice;
     context.totalMatch = Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
+    // Track if matched dice have already been collected
+    context.collectedMatched = collectedMatched ?? (context.totalMatch === 0);
   }
 
   async _prepareRecordContext(context, _options) {
@@ -376,15 +398,32 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    * @type {ApplicationClickAction}
    * @this HotpotConfig
    */
+  static #onModifyTokenNumber(_, target) {
+    const addend = target.dataset.modification === "increase" ? 1 : -1;
+    let currentTokens = this.document.system.tokens;
+    const newTokenCount = Math.max(0, currentTokens + addend);
+    return this.#submitUpdate({ "system.tokens": newTokenCount });
+  }
+
+  /**
+   * @type {ApplicationClickAction}
+   * @this HotpotConfig
+   */
   static async #onCollectMatched() {
     const { dicePool, currentPool, mealRating, matchedDice } = this.document.system;
-
-    const newPool = dicePool.reduce((acc, d) => ({ ...acc, [`d${d.faces}`]: Math.max(0, currentPool[`d${d.faces}`] - d.results.filter(r => r.matched).length) }), {});
+    // Calculate totalMatch from matchedDice
     const newTotal = mealRating + Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
+    // Update the dice pool by removing matched dice
+    const newPool = dicePool.reduce((acc, d) => ({
+      ...acc,
+      [`d${d.faces}`]: Math.max(0, currentPool[`d${d.faces}`] - d.results.filter(r => r.matched).length)
+    }), {});
 
+    // Update mealRating with totalMatch and mark collectedMatched as true
     return await this.document.update({
       "system.currentPool": newPool,
       "system.mealRating": newTotal,
+      "system.collectedMatched": true,
     });
   }
 
@@ -402,7 +441,10 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       .map(([k, v]) => new Die({ number: v, faces: Number(k.slice(1)) }).evaluate());
     const dice = await Promise.all(diceTerms);
 
-    return await this.document.update({ "system.dicePool": dice.map(d => d.toJSON()) });
+    return await this.document.update({
+      "system.dicePool": dice.map(d => d.toJSON())
+      , "system.collectedMatched": false
+    });
   }
 
   /**
