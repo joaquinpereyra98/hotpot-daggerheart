@@ -10,9 +10,6 @@ export default class IngredientModel extends foundry.abstract.TypeDataModel {
     };
   }
 
-  /**
-   * @import {CONFIG}
-   */
   get metadata() {
     return IngredientModel.metadata;
   }

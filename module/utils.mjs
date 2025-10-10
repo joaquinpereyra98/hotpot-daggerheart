@@ -20,11 +20,12 @@ export function moduleToObject(module, includeDefault = false) {
 /**
  * 
  * @param {foundry.utils.Collection} collection 
- * @param {String} flagKey 
- * @returns {foundry.abstract.Document[]}
+ * @param {String} flagKey
+ * @param {any} flagValue  
+ * @returns {foundry.abstract.Document[]|foundry.abstract.Document}
  */
-export function findDocByFlag(collection, flagKey, { multiple = false } = {}) {
-  const hasFlag = doc => !!doc.getFlag(CONSTANTS.MODULE_ID, flagKey);
+export function findDocByFlag(collection, flagKey, flagValue = true, { multiple = false } = {}) {
+  const hasFlag = doc => doc.getFlag(CONSTANTS.MODULE_ID, flagKey) === flagValue;
   if (multiple) {
     const results = collection.filter(hasFlag);
     return results.length ? results : [];

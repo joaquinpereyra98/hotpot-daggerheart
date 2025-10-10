@@ -115,8 +115,8 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /** @inheritDoc */
   _onClose(options) {
     super._onClose(options);
-     Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
-  } 
+    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id])
+  }
 
   /**
    * Handle mouse-in and mouse-out events on a dice.
@@ -227,9 +227,11 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   }
 
   /**
-   * 
+   * Prepare render context for the Header part.
    * @param {ApplicationRenderContext} context 
    * @param {HandlebarsRenderOptions} options 
+   * @returns {Promise<void>}
+   * @protected
    */
   async _prepareHeaderContext(context, _options) {
     const { currentStep, previousStep, nextStep } = this;
@@ -252,9 +254,11 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   }
 
   /**
-   * 
+   * Prepare render context for the Roll part.
    * @param {ApplicationRenderContext} context 
-   * @param {HandlebarsRenderOptions} options 
+   * @param {HandlebarsRenderOptions} options
+   * @returns {Promise<void>}
+   * @protected
    */
   async _prepareRollContext(context, _options) {
     const { dicePool, currentPool, matchedDice } = this.document.system;
@@ -265,6 +269,13 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     context.totalMatch = Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
   }
 
+  /**
+   * Prepare render context for the Record part.
+   * @param {ApplicationRenderContext} context 
+   * @param {HandlebarsRenderOptions} options 
+   * @returns {Promise<void>}
+   * @protected
+   */
   async _prepareRecordContext(context, _options) {
     /**@type {HotpotMessageData} */
     const { schema, recipe } = this.document.system;
@@ -413,12 +424,10 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     if (!game.user.isGM) return;
     /**@type {HotpotMessageData} */
     const system = this.document.system;
-    const { recipe } = system;
 
-    if (recipe.journal) await system._createJournal();
+    if (system.recipe.journal) await system._createJournal();
 
     await this.document.update({ "system.completed": true });
-
     return await this.close();
   }
 

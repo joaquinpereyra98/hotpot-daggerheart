@@ -3,31 +3,15 @@ import CONSTANTS from "../constants.mjs";
 import { findDocByFlag } from "../utils.mjs";
 
 /**
- * @typedef DieData
- * @property {number|foundry.dice.Roll} [number = 1] - The number of dice of this term to roll, before modifiers are applied, or a Roll instance that will be evaluated to a number.
- * @property {number|foundry.dice.Roll} [faces = 1] - The number of faces on each die of this type, or a Roll instance that will be evaluated to a number.
- * @property {string} method - The resolution method used to resolve DiceTerm.
- * @property {string[]} [modifiers] - An array of modifiers applied to the results
- * @property {import("@client/dice/_types.mjs").DiceTermResult[]} results - An optional array of pre-cast results for the term
- * @property {boolean} [evaluated] - An internal flag for whether the term has been evaluated
- * @property {Object} options - Additional options that modify the term
- */
-
-/**
- * @typedef {foundry.documents.ChatMessage & { system: HotpotMessageData }} HotPotChatMessage
- */
-
-/**
- * @callback ChatMessagesClickAction - An on-click action supported by HotpotMessageData.
- * @param {PointerEvent} event - The originating click event
- * @param {HTMLElement} target - The capturing HTML element which defines the [data-action]
- * @returns {void|Promise<void>}
+ * @import {HotPotChatMessage, ChatMessagesClickAction, HotpotMessageDataInterface} from "../_types.mjs";
  */
 
 /**
  * Hotpot Message Data model.
- */
+ * @extends  {Hotpofoundry.abstract.TypeDataModel<HotpotMessageDataInterface>}
+*/
 export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
+
   /**
    * Metadata definition for this DataModel.
    */
@@ -51,7 +35,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     return HotpotMessageData.metadata.template;
   }
 
-  /**@type {foundry.documents.ChatMessage} */
+  /**@type {HotPotChatMessage} */
   get #document() {
     return this.parent;
   }
@@ -82,6 +66,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     }
   }
 
+  /**@type {HotpotConfig} */
   _app;
 
   /**@type {HotpotConfig} */
@@ -115,10 +100,9 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /**
- * Compute the total flavor strengths dynamically based on prepared ingredient documents.
- *
- * @type {Record<string, {strength:number}>}
- */
+   * Compute the total flavor strengths dynamically based on prepared ingredient documents.
+   * @type {Record<string, {strength:number}>}
+   */
   get totals() {
     const totals = foundry.utils.duplicate(CONFIG.HOTPOT.flavors);
     Object.values(totals).forEach(f => f.strength = 0);
@@ -197,17 +181,20 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
    * @returns {number}
    */
   _getTokenInitials() {
-    const { FLAVORS } = CONSTANTS.JOURNAL_FLAGS;
+    const { JOURNAL_FLAGS, MODULE_ID, FLAVORS } = CONSTANTS;
     const { objectsEqual } = foundry.utils;
 
-    const recipeJournal = this.recipe?.journal;
-    if (!recipeJournal) return 0;
+    const journal = this.recipe?.journal;
+    if (!journal) return 0;
 
-    const storedRecipePages = findDocByFlag(recipeJournal.pages, FLAVORS, { multiple: true });
-    const currentFlavorProfile = Object.fromEntries(Object.entries(this.totals).map(([k, v]) => [k, v.strength]));
-    const hasMatchingProfile = storedRecipePages.some(p => objectsEqual(currentFlavorProfile, p.getFlag(CONSTANTS.MODULE_ID, FLAVORS)));
+    const profile = Object.fromEntries(Object.entries(this.totals).map(([k, v]) => [k, v.strength]));
+    const match = journal.pages.some(p => {
+      const flag = p.getFlag(MODULE_ID, JOURNAL_FLAGS);
+      return flag && objectsEqual(profile, p.getFlag(MODULE_ID, FLAVORS));
+    });
 
-    return hasMatchingProfile ? this.partyTier ?? 0 : 0;
+    return match ? this.partyTier : 0;
+
   }
 
   /**
@@ -245,12 +232,24 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       Object.entries(this.totals).map(([k, v]) => [k, v.strength])
     );
 
-    const flavorProfileText = `<h2>Flavor Profile</h2> ${Object.values(this.totals).map(v => `<p>${v.label}(d${v.dieFace}): ${v.strength}</p>`).join("")}`
+    const flavorProfileText = `<h2>Flavor Profile</h2> ${Object.values(this.totals).map(v => `<p>${v.label}(d${v.dieFace}): ${v.strength}</p>`).join("")}`;
+    const page = findDocByFlag(journal.pages, CONSTANTS.JOURNAL_FLAGS.MESSAGE, this.#document.id);
+    if (page) {
+      return page.update({
+        "text.content": description + flavorProfileText,
+        [`flags.${CONSTANTS.MODULE_ID}`]: {
+          [CONSTANTS.JOURNAL_FLAGS.FLAVORS]: flavorProfile,
+        }
+      })
+    }
     return JournalEntryPage.implementation.create({
       name,
       "text.content": description + flavorProfileText,
       category: category._id,
-      [`flags.${CONSTANTS.MODULE_ID}.${CONSTANTS.JOURNAL_FLAGS.FLAVORS}`]: flavorProfile
+      [`flags.${CONSTANTS.MODULE_ID}`]: {
+        [CONSTANTS.JOURNAL_FLAGS.FLAVORS]: flavorProfile,
+        [CONSTANTS.JOURNAL_FLAGS.MESSAGE]: this.#document.id,
+      }
     }, { parent: journal });
   }
 
@@ -323,7 +322,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**
    * Normalize and evaluate all dice in a system's dice pool.
-   * @param {Number} step - .
+   * @param {any} changed - The candidate changes to the Document
    * @returns {Promise<void>} Resolves once all dice have been evaluated and converted to JSON.
    * @async
    */
@@ -342,8 +341,14 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     }
   }
 
+  /**
+   * Add or delete apps from ingredients apps collecitons.
+   * @param {any} changed - The candidate changes to the Document
+   * @returns {Promise<void>} Resolves once all dice have been evaluated and converted to JSON.
+   * @async
+   */
   async _prepareIngredientsUpdate(changed) {
-    const { hasProperty, isDeletionKey, deleteProperty, fromUuidSync } = foundry.utils;
+    const utils = foundry.utils;
 
     // Find the active HotpotConfig app
     const app = this.app;
@@ -351,14 +356,14 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
     for (const [key, ingredient] of Object.entries(changed.system.ingredients)) {
       // Handle deletion
-      if (ingredient === null && isDeletionKey(key)) {
-        deleteProperty(this.ingredients[key.slice(2)]?.document.apps, app.id);
+      if (ingredient === null && utils.isDeletionKey(key)) {
+        utils.deleteProperty(this.ingredients[key.slice(2)]?.document.apps, app.id);
         continue;
       }
 
       // Handle addition
-      if (ingredient && !hasProperty(this.ingredients, key)) {
-        const doc = fromUuidSync(ingredient.uuid);
+      if (ingredient && !utils.hasProperty(this.ingredients, key)) {
+        const doc = utils.fromUuidSync(ingredient.uuid);
         doc.apps[app.id] = app;
       }
     }
@@ -383,10 +388,10 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /**
- * Render the contents of this chat message.
- * @param {object} options  Rendering options.
- * @returns {Promise<string>}
- */
+   * Render the contents of this chat message.
+   * @param {object} options  Rendering options.
+   * @returns {Promise<string>}
+   */
   async render(options) {
     if (!this.template) return "";
     const context = await this._prepareContext(options);
@@ -394,11 +399,11 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /**
- * Prepare application rendering context data for a given render request.
- * @param {object} options  Rendering options.
- * @returns {Promise<ApplicationRenderContext>}   Context data for the render operation.
- * @protected
- */
+   * Prepare application rendering context data for a given render request.
+   * @param {object} options  Rendering options.
+   * @returns {Promise<ApplicationRenderContext>}   Context data for the render operation.
+   * @protected
+   */
   async _prepareContext({ canDelete, canClose, ...rest } = {}) {
     const doc = this.#document;
 
@@ -452,7 +457,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /**
-   *  Add event listeners to the HTML Message.
+   * Add event listeners to the HTML Message.
    * @param {HTMLElement} html 
    */
   #attachFrameListeners(html) {

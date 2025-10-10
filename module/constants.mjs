@@ -25,6 +25,7 @@ const CONSTANTS = foundry.utils.deepFreeze({
   JOURNAL_FLAGS: {
     CATEGORY: "isRecipeCategory",
     FLAVORS: "flavorProfile",
+    MESSAGE: "sourceMessage",
   }
 });
 
