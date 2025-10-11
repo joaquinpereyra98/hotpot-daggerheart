@@ -4,6 +4,10 @@ import IngredientModel from "../data/ingredient.mjs";
 const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
+ * @import HotpotMessageData from "../data/hotpot-message-data.mjs";
+ */
+
+/**
  * @typedef {import("@client/applications/_types.mjs").ApplicationFormSubmission} ApplicationFormSubmission
  * @typedef {import("@client/applications/_types.mjs").ApplicationConfiguration} ApplicationConfiguration
  * @typedef {import("@client/applications/_types.mjs").ApplicationClickAction} ApplicationClickAction
@@ -36,7 +40,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       previousStep: HotpotConfig.#onPreviousStep,
       modifyItemQuantity: HotpotConfig.#onModifyItemQuantity,
       removeIngredient: HotpotConfig.#onRemoveIngredient,
-      modifyTokenNumber: HotpotConfig.#onModifyTokenNumber,
+      modifyInputNumber: HotpotConfig.#onModifyInputNumber,
       collectMatched: HotpotConfig.#onCollectMatched,
       rollFlavor: HotpotConfig.#onRollFlavor,
       finishHotpot: HotpotConfig.#onFinishHotpot,
@@ -258,7 +262,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /**
    * Prepare render context for the Roll part.
    * @param {ApplicationRenderContext} context 
-   * @param {HandlebarsRenderOptions} options
+   * @param {HandlebarsRenderOptions} _options
    * @returns {Promise<void>}
    * @protected
    */
@@ -269,18 +273,17 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     context.dicePoolIsEmpty = !Object.values(currentPool).some(v => v > 0);
     context.matchedDice = matchedDice;
     context.totalMatch = Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
-    context.collectedMatched = collectedMatched ?? context.totalMatch;
+    context.collectedMatched = collectedMatched || !context.totalMatch;
   }
 
   /**
    * Prepare render context for the Record part.
    * @param {ApplicationRenderContext} context 
-   * @param {HandlebarsRenderOptions} options 
+   * @param {HandlebarsRenderOptions} _options 
    * @returns {Promise<void>}
    * @protected
    */
   async _prepareRecordContext(context, _options) {
-    /**@type {HotpotMessageData} */
     const { schema, recipe } = this.document.system;
     const { TextEditor } = foundry.applications.ux;
 
@@ -386,10 +389,9 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     if (!game.user.isGM) return;
     const { key } = target.closest("[data-key]").dataset;
     const addend = event.button === 2 ? 1 : -1;
-
     const current = this.document.system.currentPool[key] ?? 0;
     const newVal = Math.max(0, current + addend);
-    return this.#submitUpdate({ [`system.currentPool.${key}`]: newVal });
+    return this.document.update({ [`system.currentPool.${key}`]: newVal });
   }
 
   /**
@@ -398,19 +400,19 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static #onRemoveIngredient(_, target) {
     const { itemId } = target.closest("[data-item-id]").dataset;
-    if (!itemId) return;
-    return this.#submitUpdate({ [`system.ingredients.-=${itemId}`]: null });
+    if (itemId) return this.#submitUpdate({ [`system.ingredients.-=${itemId}`]: null });
   }
 
   /**
    * @type {ApplicationClickAction}
    * @this HotpotConfig
    */
-  static #onModifyTokenNumber(_, target) {
+  static #onModifyInputNumber(_, target) {
+    const name = target.name;
     const addend = target.dataset.modification === "increase" ? 1 : -1;
-    const currentTokens = this.document.system.tokens;
-    const newTokens = Math.max(0, currentTokens + addend);
-    return this.#submitUpdate({ "system.tokens": newTokens });
+    const currentValue = foundry.utils.getProperty(this.document, name);
+    const newValue = Math.max(0, currentValue + addend);
+    return this.#submitUpdate({ [name]: newValue });
   }
 
   /**

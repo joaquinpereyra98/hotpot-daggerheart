@@ -19,9 +19,6 @@
     display: flex;
     border-radius: 0.5rem;
     border: 1px solid light-dark(var(--dark-blue-color), var(--gold-color));
-    /* Keep both positioning and overflow so absolutely positioned icons work and overflow is clipped */
-    position: relative;
-    overflow: hidden;
 
     &.inactive {
       opacity: 0.7;
@@ -312,35 +309,54 @@
         height: 80px;
         margin: 0 10px;
         align-items: center;
-        justify-content: center;
+        justify-content: center;        
 
         .label-input {
+          width: 100%;
+          text-align: center;
           font-family: var(--montserrat-font);
+          font-weight: bold;
+          font-size: 15px;
           padding: 2px 10px;
           border-radius: 3px;
           background: light-dark(var(--dark-blue-color), var(--gold-color));
           color: light-dark(var(--beige-color), var(--dark-blue-color));
-          width: 100%;
-          width: -webkit-fill-available;
-          text-align: center;
-          font-weight: bold;
-          font-size: 15px;
         }
 
-        input {
-          width: calc(100% - 20px);
-          border-bottom-left-radius: 0;
-          border-bottom-right-radius: 0;
-          border-bottom: 0;
-          border-color: light-dark(var(--dark-blue-color), var(--gold-color));
-          text-align: center;
+        .input-controls {
+          position: relative;
+          margin: 0 10px;
           font-size: 25px;
-          --input-height: 1.5em;
-
-          &:disabled {
-            cursor: inherit;
+          input {
+            width: 100%;
+            text-align: center;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border: 1px solid light-dark(var(--dark-blue-color), var(--gold-color));
+            border-bottom: none;
+            --input-height: 1.5em;
+  
+            &:disabled {
+              cursor: inherit;
+            }
           }
-        }
+          a.input-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.1;
+            transition: opacity var(--magic-number) ease-in-out;
+            &.left {
+              left: 8px;
+            }
+            &.right {
+              right: 8px;
+            }
+          }
+          &:hover a.input-button:not([disabled]) {
+              opacity: 1;
+            } 
+          }
       }
 
       .finish-button {
@@ -539,36 +555,6 @@
 
       &:hover {
         font-weight: bold;
-      }
-    }
-  }
-  .token-input {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-
-    .quantity-control {
-      cursor: pointer;
-      padding: 5px;
-      border-radius: 4px;
-      background: light-dark(var(--dark-blue-color), var(--gold-color));
-      color: light-dark(var(--beige-color), var(--dark-blue-color));
-      font-size: 20px;
-      text-align: center;
-
-      &:hover {
-        background: light-dark(var(--gold-color), var(--dark-blue-color));
-        color: light-dark(var(--dark-blue-color), var(--beige-color));
-      }
-
-      &[disabled] {
-        cursor: default;
-        opacity: 0.4;
-
-        &:hover {
-          background: light-dark(var(--dark-blue-color), var(--gold-color));
-          color: light-dark(var(--beige-color), var(--dark-blue-color));
-        }
       }
     }
   }

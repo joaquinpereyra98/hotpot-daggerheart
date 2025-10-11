@@ -219,7 +219,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
    * @returns {number}
    */
   _getTokenInitials() {
-    const { JOURNAL_FLAGS, MODULE_ID, FLAVORS } = CONSTANTS;
+    const { JOURNAL_FLAGS, MODULE_ID } = CONSTANTS;
     const { objectsEqual } = foundry.utils;
 
     const journal = this.recipe?.journal;
@@ -227,8 +227,8 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
     const profile = Object.fromEntries(Object.entries(this.totals).map(([k, v]) => [k, v.strength]));
     const match = journal.pages.some(p => {
-      const flag = p.getFlag(MODULE_ID, JOURNAL_FLAGS);
-      return flag && objectsEqual(profile, p.getFlag(MODULE_ID, FLAVORS));
+      const flag = p.getFlag(MODULE_ID, JOURNAL_FLAGS.FLAVORS) ?? {};
+      return objectsEqual(profile, flag);
     });
 
     return match ? this.partyTier : 0;

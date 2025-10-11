@@ -2,37 +2,57 @@
     <h4 class="step-title">{{step.label}}</h4>
     <div class="flexrow">
         <div class="inputs-containers flexcol">
-            <input
-                value="{{document.system.mealRating}}"
-                name="system.mealRating"
-                type="number"
-                {{disabled (not isGM)}}
-            >
+            <div class="input-controls">
+                <input
+                    value="{{document.system.mealRating}}"
+                    name="system.mealRating"
+                    type="number"
+                    {{disabled (not isGM)}}
+                >
+                {{#if isGM}}
+                <a
+                    class="input-button left fa-regular fa-minus-circle"
+                    data-action="modifyInputNumber"
+                    data-modification="decrease"
+                    name="system.mealRating"
+                    {{disabled (not document.system.mealRating)}}
+                ></a>
+                <a
+                    class="input-button right fa-regular fa-plus-circle"
+                    data-action="modifyInputNumber"
+                    name="system.mealRating"
+                    data-modification="increase"
+                ></a>
+                {{/if}}
+            </div>
             <div class="label-input">Meal Ratings</div>
         </div>
         <div class="inputs-containers flexcol">
-            <div class="token-input flexrow">
-                <a
-                    class="quantity-control fa-regular fa-minus"
-                    data-action="modifyTokenNumber"
-                    data-modification="decrease"
-                    {{disabled (eq 0 quantity)}}
-                ></a>
+            <div class="input-controls">
                 <input
                     class="input-tokens"
                     name="system.tokens"
                     value="{{document.system.tokens}}"
                     type="number"
-                    {{disabled
-          (not isGM)}}
+                    {{disabled (not isGM)}}
                 >
+                {{#if isGM}}
                 <a
-                    class="quantity-control fa-regular fa-plus"
-                    data-action="modifyTokenNumber"
+                    class="input-button left fa-regular fa-minus-circle"
+                    data-action="modifyInputNumber"
+                    data-modification="decrease"
+                    name="system.tokens"
+                    {{disabled (not document.system.tokens)}}
+                ></a>
+                <a
+                    class="input-button right fa-regular fa-plus-circle"
+                    data-action="modifyInputNumber"
+                    name="system.tokens"
                     data-modification="increase"
                 ></a>
+                {{/if}}
             </div>
-            <div class="label-input"> Tokens </div>
+            <div class="label-input">Tokens</div>
         </div>
         {{#if isGM}}
         <button
