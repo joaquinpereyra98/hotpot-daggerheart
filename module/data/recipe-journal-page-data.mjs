@@ -1,16 +1,13 @@
 import CONSTANTS from "../constants.mjs";
 
 /**
- * @import HotpotChatMessage from "../_types.mjs"
- */
-
-/**
  * Hotpot Message Data model.
  * @extends  {foundry.abstract.TypeDataModel<any>}
 */
 export default class RecipeJournalPageData extends foundry.abstract.TypeDataModel {
   static get metadata() {
     return {
+      documentName: foundry.documents.JournalEntryPage.metadata.name,
       label: "Recipe",
       labelPlural: "Recipes",
       type: `${CONSTANTS.MODULE_ID}.recipe`,

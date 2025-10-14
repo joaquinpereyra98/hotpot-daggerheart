@@ -3,11 +3,9 @@ import * as apps from "./module/apps/_module.mjs";
 import * as hooks from "./module/hooks/_module.mjs";
 import * as socket from "./module/sockets-callbacks.mjs";
 
-import { moduleToObject } from "./module/utils.mjs";
+import { moduleToObject, registerDataModel, registerModuleSheet } from "./module/utils.mjs";
 import HOTPOT_CONFIG from "./module/config.mjs";
 import CONSTANTS from "./module/constants.mjs";
-
-const { DocumentSheetConfig } = foundry.applications.apps;
 
 foundry.utils.setProperty(
   globalThis,
@@ -23,25 +21,17 @@ foundry.utils.setProperty(
 
 Hooks.on("init", () => {
   const { data, socket, apps } = HOTPOT;
-
-  CONFIG.HOTPOT = HOTPOT_CONFIG;
-
-  CONFIG.Item.dataModels[data.IngredientModel.metadata.type] = data.IngredientModel;
-  CONFIG.ChatMessage.dataModels[data.HotpotMessageData.metadata.type] = data.HotpotMessageData;
-  CONFIG.JournalEntryPage.dataModels[data.RecipeJournalPageData.metadata.type] = data.RecipeJournalPageData;
-  CONFIG.queries[CONSTANTS.queries.updateHotpotAsGm] = socket._onUpdateHotpotAsGm;
-
   apps.IngredientSheet = apps.createIngredientSheet();
 
-  DocumentSheetConfig.registerSheet(foundry.documents.Item, CONSTANTS.MODULE_ID, apps.IngredientSheet, {
-    makeDefault: true,
-    types: [data.IngredientModel.metadata.type],
-  });
+  CONFIG.HOTPOT = HOTPOT_CONFIG;
+  CONFIG.queries[CONSTANTS.queries.updateHotpotAsGm] = socket._onUpdateHotpotAsGm;
 
-  DocumentSheetConfig.registerSheet(foundry.documents.JournalEntryPage, CONSTANTS.MODULE_ID, apps.JournalEntryPageRecipeSheet, {
-    makeDefault: true,
-    types: [data.RecipeJournalPageData.metadata.type],
-  });
+  registerDataModel(data.IngredientModel);
+  registerDataModel(data.HotpotMessageData);
+  registerDataModel(data.RecipeJournalPageData);
+  
+  registerModuleSheet(apps.IngredientSheet, foundry.documents.Item, { types: [data.IngredientModel.metadata.type] });
+  registerModuleSheet(apps.JournalEntryPageRecipeSheet, foundry.documents.JournalEntryPage, { types: [data.RecipeJournalPageData.metadata.type] });
 
   stupidPatchIMustRemove();
 });

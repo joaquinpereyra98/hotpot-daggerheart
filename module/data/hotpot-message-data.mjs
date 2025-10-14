@@ -17,6 +17,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
    */
   static get metadata() {
     return {
+      documentName: foundry.documents.ChatMessage.metadata.name,
       type: `${CONSTANTS.MODULE_ID}.hotpot`,
       template: `${CONSTANTS.TEMPLATE_PATH}/chat-message/hotpot.hbs`,
       actions: {

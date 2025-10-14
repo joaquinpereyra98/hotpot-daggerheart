@@ -3,6 +3,7 @@ import CONSTANTS from "../constants.mjs";
 export default class IngredientModel extends foundry.abstract.TypeDataModel {
   static get metadata() {
     return {
+      documentName: foundry.documents.Item.metadata.name,
       label: "Ingredient",
       labelPlural: "Ingredients",
       type: `${CONSTANTS.MODULE_ID}.ingredient`,

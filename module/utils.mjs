@@ -1,3 +1,5 @@
+import CONSTANTS from "./constants.mjs";
+
 /**
  * Convert a module namespace into a plain object.
  * Strips off default exports and meta-properties.
@@ -13,4 +15,27 @@ export function moduleToObject(module, includeDefault = false) {
     obj[key] = value;
   }
   return obj;
+}
+/**
+ * 
+ * @param {foundry.abstract.TypeDataModel} datamodel 
+ */
+export function registerDataModel(datamodel) {
+  const { type, documentName } = datamodel.metadata;
+  if(!type || !documentName) return;
+  CONFIG[documentName].dataModels[type] = datamodel;
+}
+
+/**
+ * 
+ * @param {foundry.applications.api.ApplicationV2} applicationClass - An Application class used to render the sheet.
+ * @param {foundry.abstract.Document} documentClass - The Document class to register a new sheet for.
+ * @param {import("@client/applications/apps/document-sheet-config.mjs").SheetRegistrationOptions} options - Sheet registration configuration options
+ */
+export function registerModuleSheet(applicationClass, documentClass, { makeDefault = true, ...rest } = {}) {
+  foundry.applications.apps.DocumentSheetConfig.registerSheet(documentClass, CONSTANTS.MODULE_ID, applicationClass, {
+    makeDefault,
+    ...rest,
+  });
+
 }

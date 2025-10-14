@@ -12,11 +12,5 @@
   },
   "[handlebars]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-  },
-  "favorites.resources": [
-    {
-      "filePath": "module\\apps\\journal-entry-page-recipe-sheet.mjs",
-      "group": "Default"
-    }
-  ]
+  }
 }
