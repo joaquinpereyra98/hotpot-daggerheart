@@ -1,0 +1,76 @@
+<div class="scrollable">
+    <div class="sidebar">
+        <img
+            class="recipe-img"
+            src="{{source.system.img}}"
+            alt="{{name}}"
+            title="{{name}}"
+            data-action="editImage"
+            data-edit="system.img"
+        >
+        <div class="flavor-tags">
+            {{#each flavors as |flavor key|}}
+            <div class="flavor-tag" data-flavor="{{key}}">
+                <span class="flavor-label">{{flavor.label}}</span>
+                <input
+                    class="flavor-strength"
+                    type="number"
+                    name="system.flavors.{{key}}"
+                    value="{{flavor.strength}}"
+                >
+            </div>
+            {{/each}}
+        </div>
+        <div class="section-divider">
+            <span class="title">Ingredients</span>
+            <a
+                class="icon fa-regular fa-square-plus"
+                data-action="createIngredient"
+                data-tooltip="Create Ingredient"
+            ></a>
+        </div>
+        <ul class="ingredients-list">
+            {{#each source.system.ingredients as |i k|}}
+            <div class="item-row">
+                <div class="item-column item-quantity text-style">
+                    <input
+                        class="title"
+                        type="number"
+                        name="system.ingredients.{{k}}.quantity"
+                        value="{{quantity}}"
+                    >
+                </div>
+                <div class="item-column item-name">
+                    <input
+                        class="text-style"
+                        type="text"
+                        name="system.ingredients.{{k}}.name"
+                        value="{{name}}"
+                    >
+                </div>
+                <div class="item-controls">
+                    <a
+                        class="icon fa-regular fa-trash"
+                        data-action="deleteIngredient"
+                        data-key="{{k}}"
+                    ></a>
+                </div>
+            </div>  
+            {{/each}}
+        </ul>
+    </div>
+    <div class="content-body ">
+        <div class="section-divider">
+            <span class="title">Description</span>
+        </div>
+        <section class="journal-page-content">
+            <prose-mirror
+                name="text.content"
+                class="journal-page-content"
+                value="{{ description.value }}"
+                data-document-uuid="{{ uuid }}"
+                collaborate
+            ></prose-mirror>
+        </section>
+    </div>
+</div>

@@ -65,8 +65,13 @@
         {{/if}}
         {{#if (gte system.step 1)}}
         <div class="section-divider"><span class="title">Recipe</span></div>
-        <div class="title text-style flexrow">
-            <span>{{system.recipe.name}}</span>
+        <div class="title text-style flexrow" data-tooltip="{{system.recipe.name}}">
+            <img
+                class="recipe-img"
+                src="{{system.recipe.img}}"
+                alt="{{system.recipe.name}}"
+            >
+            <span class="recipe-name">{{system.recipe.name}}</span>
             {{#if system.recipe.journal}}
             <a class="icon-button fa-regular fa-book-bookmark text-style" data-action="openCookbook"></a>
             {{/if}}

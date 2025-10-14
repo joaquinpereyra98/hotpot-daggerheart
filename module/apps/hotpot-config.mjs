@@ -466,10 +466,8 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static async #onFinishHotpot() {
     if (!game.user.isGM) return;
-    /**@type {HotpotMessageData} */
-    const system = this.document.system;
-
-    if (system.recipe.journal) await system._createJournal();
+    
+    await this.document.system.getJournalRecipe();
     await this.document.update({ "system.completed": true });
     return await this.close();
   }

@@ -1,9 +1,9 @@
 import HotpotConfig from "../apps/hotpot-config.mjs";
 import CONSTANTS from "../constants.mjs";
-import { findDocByFlag } from "../utils.mjs";
+import RecipeJournalPageData from "./recipe-journal-page-data.mjs";
 
 /**
- * @import {HotPotChatMessage, ChatMessagesClickAction, HotpotMessageDataInterface} from "../_types.mjs";
+ * @import {HotpotChatMessage, ChatMessagesClickAction, HotpotMessageDataInterface} from "../_types.mjs";
  */
 
 /**
@@ -35,7 +35,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     return HotpotMessageData.metadata.template;
   }
 
-  /**@type {HotPotChatMessage} */
+  /**@type {HotpotChatMessage} */
   get #document() {
     return this.parent;
   }
@@ -48,6 +48,10 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
         name: new f.StringField({ initial: "New Recipe" }),
         description: new f.HTMLField(),
         journal: new f.ForeignDocumentField(foundry.documents.BaseJournalEntry, { required: true }),
+        img: new f.FilePathField({
+          categories: ["IMAGE"],
+          initial: RecipeJournalPageData.metadata.icon, 
+        }),
       }),
       completed: new f.BooleanField({ gmOnly: true }),
       ingredients: new f.TypedObjectField(new f.SchemaField({
@@ -255,54 +259,55 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /**
+   * 
+   * @param {Partial<foundry.documents.types.JournalEntryPageData>} data - Initial data used to create the JournalEntryPage
+   * @returns {foundry.documents.types.JournalEntryPageData}
+   * @returns 
+   */
+  toJournalData(data = {}) {
+    const { name, description, img } = this.recipe;
+    return foundry.utils.mergeObject(data, {
+      name,
+      system: {
+        flavors: Object.fromEntries(Object.entries(this.totals).map(([k, v]) => [k, v.strength])),
+        img,
+        ingredients: Object.fromEntries(Object.entries(this.ingredients).map(([k,v]) => ([k, {
+          name: v.document.name,
+          quantity: v.quantity,
+        }]))),
+        source: this.#document._id,
+      }, 
+      text: {
+        content: description,
+        format: CONST.JOURNAL_ENTRY_PAGE_FORMATS.HTML,
+      },
+      type: RecipeJournalPageData.metadata.type,
+    }, { inplace: false });
+  }
+
+  /**
    * Creates (if necessary) a journal category and a journal entry page
    * in the journal specified in the recipe.
    * @returns {Promise<foundry.documents.JournalEntryPage|void>}
    */
-  async _createJournal() {
-    const { JournalEntryPage } = foundry.documents;
-    const { journal, name, description } = this.recipe;
+  async getJournalRecipe({ render = false } = {}) {
+    const cls = foundry.documents.JournalEntryPage.implementation;
+    const journal = this.recipe.journal;
     if (!journal) return;
 
-    const category = findDocByFlag(journal.categories, CONSTANTS.JOURNAL_FLAGS.CATEGORY) ?? await this.#createCategory(journal);
+    const category = await RecipeJournalPageData.getRecipeCategory(journal);
+    const recipePageData = this.toJournalData({ category: category._id });
 
-    const flavorProfile = Object.fromEntries(
-      Object.entries(this.totals).map(([k, v]) => [k, v.strength]),
-    );
+    let page = await journal.pages.find(p => p.system.source === this.#document._id)?.update(recipePageData);
 
-    const flavorProfileText = `<h2>Flavor Profile</h2> ${Object.values(this.totals).map(v => `<p>${v.label}(d${v.dieFace}): ${v.strength}</p>`).join("")}`;
-    const page = findDocByFlag(journal.pages, CONSTANTS.JOURNAL_FLAGS.MESSAGE, this.#document.id);
-    if (page) {
-      return page.update({
-        "text.content": description + flavorProfileText,
-        [`flags.${CONSTANTS.MODULE_ID}`]: { [CONSTANTS.JOURNAL_FLAGS.FLAVORS]: flavorProfile },
-      });
-    }
-    return JournalEntryPage.implementation.create({
-      name,
-      "text.content": description + flavorProfileText,
-      category: category._id,
-      [`flags.${CONSTANTS.MODULE_ID}`]: {
-        [CONSTANTS.JOURNAL_FLAGS.FLAVORS]: flavorProfile,
-        [CONSTANTS.JOURNAL_FLAGS.MESSAGE]: this.#document.id,
-      },
-    }, { parent: journal });
-  }
-
-  /**
-   * Creates a new "Hotpot Recipes" category in the given journal.
-   * @param {foundry.documents.JournalEntry} parent he journal where the category will be created.
-   * @returns {Promise<foundry.documents.JournalEntryCategory>}
-   */
-  async #createCategory(parent) {
-    const { JournalEntryCategory } = foundry.documents;
-    const categories = parent.categories.contents ?? [];
-
-    return JournalEntryCategory.implementation.create({
-      name: "Hotpot Recipes",
-      sort: (categories.length + 1) * CONST.SORT_INTEGER_DENSITY,
-      [`flags.${CONSTANTS.MODULE_ID}.${CONSTANTS.JOURNAL_FLAGS.CATEGORY}`]: true,
-    }, { parent });
+    if (!page) page = await cls.create(recipePageData, { parent: journal });
+    
+    if (render) page.sheet.render({
+      force: true,
+      pageId: page.id,
+    });
+    
+    return page;
   }
 
   /* -------------------------------------------- */
@@ -311,7 +316,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**
    * @param {foundry.documents.types.ChatMessageData} data 
-   * @returns {HotPotChatMessage}
+   * @returns {HotpotChatMessage}
    */
   static async create(data = {}) {
     if (!game.user.isGM) return;
@@ -529,7 +534,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**
    * @type {ChatMessagesClickAction}
-   * @this {HotPotChatMessage}
+   * @this {HotpotChatMessage}
    */
   static #onOpenHotpot() {
     this.system.app.render({ force: true });
@@ -537,7 +542,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**
    * @type {ChatMessagesClickAction}
-   * @this {HotPotChatMessage}
+   * @this {HotpotChatMessage}
    */
   static async #onToggleCompleted(event) {
     if (!game.user.isGM) return;
@@ -548,7 +553,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**
  * @type {ChatMessagesClickAction}
- * @this {HotPotChatMessage}
+ * @this {HotpotChatMessage}
  */
   static #onOpenCookbook() {
     const journal = this.system.recipe.journal;

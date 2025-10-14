@@ -28,6 +28,7 @@ Hooks.on("init", () => {
 
   CONFIG.Item.dataModels[data.IngredientModel.metadata.type] = data.IngredientModel;
   CONFIG.ChatMessage.dataModels[data.HotpotMessageData.metadata.type] = data.HotpotMessageData;
+  CONFIG.JournalEntryPage.dataModels[data.RecipeJournalPageData.metadata.type] = data.RecipeJournalPageData;
   CONFIG.queries[CONSTANTS.queries.updateHotpotAsGm] = socket._onUpdateHotpotAsGm;
 
   apps.IngredientSheet = apps.createIngredientSheet();
@@ -35,6 +36,11 @@ Hooks.on("init", () => {
   DocumentSheetConfig.registerSheet(foundry.documents.Item, CONSTANTS.MODULE_ID, apps.IngredientSheet, {
     makeDefault: true,
     types: [data.IngredientModel.metadata.type],
+  });
+
+  DocumentSheetConfig.registerSheet(foundry.documents.JournalEntryPage, CONSTANTS.MODULE_ID, apps.JournalEntryPageRecipeSheet, {
+    makeDefault: true,
+    types: [data.RecipeJournalPageData.metadata.type],
   });
 
   stupidPatchIMustRemove();

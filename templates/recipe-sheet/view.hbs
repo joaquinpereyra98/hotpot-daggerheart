@@ -1,0 +1,48 @@
+<div class="scrollable">
+    <div class="sidebar">
+        <img
+            class="recipe-img"
+            src="{{source.system.img}}"
+            alt="{{name}}"
+            title="{{name}}"
+        >
+        <div class="flavor-tags">
+            {{#each flavors as |flavor key|}}
+            <div class="flavor-tag {{#unless flavor.strength}} inactive{{/unless}}" data-flavor="{{key}}">
+                <span class="flavor-label">{{flavor.label}}</span>
+                <input
+                    class="flavor-strength"
+                    type="number"
+                    name="system.flavors.{{key}}"
+                    value="{{flavor.strength}}"
+                    disabled
+                >
+            </div>
+            {{/each}}
+        </div>
+        <div class="section-divider">
+            <span class="title">Ingredients</span>
+        </div>
+        <ul class="ingredients-list">
+            {{#each source.system.ingredients}}
+            <div class="item-row">
+                <div class="item-column item-quantity text-style">
+                    <span class="title">{{quantity}}</span>
+                    x
+                </div>
+                <div class="item-column item-name">
+                    <div class="name text-style">{{name}}</div>
+                </div>
+            </div>
+            {{/each}}
+        </ul>
+    </div>
+    <div class="content-body">
+        <div class="section-divider">
+            <span class="title">Description</span>
+        </div>
+        <section class="journal-page-content">
+            {{{ description.enriched }}}
+        </section>
+    </div>
+</div>

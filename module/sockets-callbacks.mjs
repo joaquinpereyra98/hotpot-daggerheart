@@ -12,7 +12,7 @@ const { isEmpty } = foundry.utils;
  * @returns {Promise<foundry.abstract.Document|undefined>} The updated document, or `undefined` if no update occurred.
  */
 export async function _onUpdateHotpotAsGm({ messageId, data, operation } = {}) {
-  /**@type {import("./_types.mjs").HotPotChatMessage} */
+  /**@type {import("./_types.mjs").HotpotChatMessage} */
   const doc = game.messages.get(messageId);
 
   if (

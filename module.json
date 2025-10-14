@@ -28,8 +28,11 @@
     }
   ],
   "relationships": {
-    "requires": [],
-    "recommends": []
+    "requires": [{
+      "id":"daggerheart",
+      "type": "system",
+      "manifest": "https://github.com/Foundryborne/daggerheart/releases/latest/download/system.json"
+    }]
   },
   "esmodules": ["hotpot.mjs"],
   "styles": ["styles/hotpot.css"],
@@ -41,8 +44,18 @@
     },
     "ChatMessage": {
       "hotpot": {
+        "filePathFields": {
+          "recipe.img": ["IMAGE"]
+        },
         "htmlFields": ["recipe.description"],
         "gmOnlyFields": ["completed", "collectedMatched"]
+      }
+    },
+    "JournalEntryPage": {
+      "recipe": {
+        "filePathFields": {
+          "img": ["IMAGE"]
+        }
       }
     }
   },

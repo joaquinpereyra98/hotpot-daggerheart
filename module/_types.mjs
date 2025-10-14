@@ -2,7 +2,7 @@
 
 /**
  * @import HotpotMessageData from "./data/hotpot-message-data.mjs";
- * @typedef {foundry.documents.ChatMessage & { system: HotpotMessageData & HotpotMessageDataInterface }} HotPotChatMessage
+ * @typedef {foundry.documents.ChatMessage & { system: HotpotMessageData & HotpotMessageDataInterface }} HotpotChatMessage
  */
 
 /**
