@@ -1,3 +1,6 @@
 node_modules/
 foundry
 public
+
+packs/*/
+!packs/.src/

@@ -1,0 +1,27 @@
+{
+  "name": "Start Feast",
+  "type": "script",
+  "_id": "cIQHtt2srVPSREfr",
+  "author": "H5H10T3EQuxx0OvU",
+  "img": "modules/hotpot-daggerheart/assets/camp-cooking-pot.svg",
+  "scope": "global",
+  "command": "HOTPOT.api.startFeast();",
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null,
+    "coreVersion": "13.350",
+    "systemId": "daggerheart",
+    "systemVersion": "1.1.2",
+    "createdTime": 1762376796402,
+    "modifiedTime": 1762376861626,
+    "lastModifiedBy": "HotpotBuilder000"
+  },
+  "_key": "!macros!cIQHtt2srVPSREfr"
+}

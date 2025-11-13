@@ -316,7 +316,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   /* -------------------------------------------- */
 
   /**
-   * @param {foundry.documents.types.ChatMessageData} data 
+   * @param {Partial<Omit<foundry.documents.types.ChatMessageData, "_stats"|"_id"|"type">>} data 
    * @returns {HotpotChatMessage}
    */
   static async create(data = {}) {

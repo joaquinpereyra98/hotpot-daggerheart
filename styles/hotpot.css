@@ -335,7 +335,7 @@
         text-align: start;
         outline: 2px solid transparent;
       }
-        .description-fieldset {
+      .description-fieldset {
           flex: 1 1 auto;
       }
     }

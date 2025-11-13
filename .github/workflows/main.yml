@@ -47,7 +47,8 @@ jobs:
             hotpot.mjs \
             styles/hotpot.css \
             lang/ \
-            templates/
+            templates/ \
+            packs/
       - name: Update Release With Files
         id: create_version_release
         uses: ncipollo/release-action@v1

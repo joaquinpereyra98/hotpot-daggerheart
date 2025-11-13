@@ -64,5 +64,12 @@
       "extensions": ["css", "hbs"],
       "paths": ["styles/hotpot.css", "templates/"]
     }
-  }
+  },
+  "packs": [{
+      "label": "Hotpot Macros",
+      "name": "hotpot-macros",
+      "path": "packs/hotpot-macros",
+      "type": "Macro"
+    }
+  ]
 }
