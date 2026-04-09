@@ -5,7 +5,7 @@
   "version": "#{VERSION}#",
   "compatibility": {
     "minimun": "13",
-    "verified": "13"
+    "verified": "14"
   },
   "authors": [
     {
@@ -29,9 +29,8 @@
   ],
   "relationships": {
     "requires": [{
-      "id":"daggerheart",
-      "type": "system",
-      "manifest": "https://github.com/Foundryborne/daggerheart/releases/latest/download/system.json"
+      "id": "daggerheart",
+      "type": "system"
     }]
   },
   "esmodules": ["hotpot.mjs"],

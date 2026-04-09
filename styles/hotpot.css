@@ -588,10 +588,11 @@
 
       button {
         font-size: large;
-        background: light-dark(transparent, var(--gold-color));
-
-        &:not(:hover)&:not(:disabled) {
-          background: light-dark(transparent, var(--gold-color));
+        background: var(--light-dark);
+        color: light-dark(var(--gold-color), var(--dark-blue-color));
+        &:hover {
+          background: light-dark( var(--gold-color), var(--dark-blue-color));
+          color: light-dark(var(--dark-blue-color), var(--gold-color));
         }
       }
     }
