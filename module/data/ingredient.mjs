@@ -15,26 +15,41 @@ export default class IngredientModel extends foundry.abstract.TypeDataModel {
     return IngredientModel.metadata;
   }
 
+  /**
+   * Obtain a data object used to evaluate any dice rolls associated with this Item Type
+   * @param {object} [options] - Options which modify the getRollData method.
+   * @returns {object}
+   */
+  getRollData(options = {}) {
+    const data = this.actor?.getRollData(options) ?? {};
+    data.item = { ...this };
+    return data;
+  }
+
   /**@override */
   static defineSchema() {
-    const { HTMLField, TypedObjectField, NumberField, SchemaField } = foundry.data.fields;
+    const { HTMLField, TypedObjectField, NumberField, SchemaField } =
+      foundry.data.fields;
     return {
       description: new HTMLField({
         required: true,
-        nullable: true, 
+        nullable: true,
       }),
-      flavors: new TypedObjectField(new SchemaField({
-        strength: new NumberField({
-          initial: 1,
-          min: 1,
-          max: 3, 
+      flavors: new TypedObjectField(
+        new SchemaField({
+          strength: new NumberField({
+            initial: 1,
+            min: 1,
+            max: 3,
+          }),
         }),
-      }), { validateKey: (k) => Object.keys(CONFIG.HOTPOT.flavors).includes(k) }),
+        { validateKey: (k) => Object.keys(CONFIG.HOTPOT.flavors).includes(k) },
+      ),
       quantity: new NumberField({
         integer: true,
         initial: 1,
         positive: true,
-        required: true, 
+        required: true,
       }),
     };
   }
@@ -51,13 +66,11 @@ export default class IngredientModel extends foundry.abstract.TypeDataModel {
         dieFace: cfg.dieFace,
       };
     }
-
-
   }
 
   /**
-  * The default icon used for newly created Item documents
-  * @type {string}
-  */
+   * The default icon used for newly created Item documents
+   * @type {string}
+   */
   static DEFAULT_ICON = null;
 }
