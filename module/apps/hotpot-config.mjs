@@ -1,11 +1,6 @@
 import CONSTANTS from "../constants.mjs";
-import IngredientModel from "../data/ingredient.mjs";
 
 const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
-
-/**
- * @import HotpotMessageData from "../data/hotpot-message-data.mjs";
- */
 
 /**
  * @typedef {import("@client/applications/_types.mjs").ApplicationFormSubmission} ApplicationFormSubmission
@@ -80,7 +75,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
 
   /** @override */
   get title() {
-    return game.i18n.localize(this.options.window.title);
+    return _loc(this.options.window.title);
   }
 
   /** @override */
@@ -165,7 +160,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     if (!embedded.length) return ui.notifications.warn("may not be an embedded document");
 
     const doc = await documentClass.fromDropData(data);
-    if (doc.type !== IngredientModel.metadata.type) return;
+    if (doc.type !== HOTPOT.data.IngredientModel.metadata.type) return;
 
     return this.#submitUpdate({
       [`system.ingredients.${doc.id}`]: {
@@ -400,7 +395,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static #onRemoveIngredient(_, target) {
     const { itemId } = target.closest("[data-item-id]").dataset;
-    if (itemId) return this.#submitUpdate({ [`system.ingredients.-=${itemId}`]: null });
+    if (itemId) return this.#submitUpdate({ [`system.ingredients.${itemId}`]: _del });
   }
 
   /**

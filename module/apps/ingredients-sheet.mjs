@@ -80,7 +80,7 @@ export default function createIngredientSheet() {
         callback: async target => {
           const { flavor } = target.closest("[data-flavor]").dataset;
           if (!flavor) return;
-          await this.document.update({ [`system.flavors.-=${flavor}`]: null });
+          await this.document.update({ [`system.flavors.${flavor}`]: _del });
         },
       }];
     }
@@ -109,7 +109,7 @@ export default function createIngredientSheet() {
      */
     static async #onDeleteFlavor(_, target) {
       const { flavor } = target.closest("[data-flavor]")?.dataset ?? {};
-      return await this.item.update({ [`system.flavors.-=${flavor}`]: null });
+      return await this.item.update({ [`system.flavors.${flavor}`]: _del });
     }
 
   }

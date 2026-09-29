@@ -56,7 +56,7 @@ export default class JournalEntryPageRecipeSheet extends JournalEntryPageHandleb
       const cfg = CONFIG.HOTPOT.flavors[k];
       return [k, {
         strength: s ?? 0,
-        label: game.i18n.localize(cfg.label),
+        label: _loc(cfg.label),
         dieFace: cfg.dieFace,
       }]; 
     }));
@@ -89,7 +89,7 @@ export default class JournalEntryPageRecipeSheet extends JournalEntryPageHandleb
    */
   static async #onDeleteIngredient(_, target){
     const { key } = target.dataset;
-    await this.document.update({ [`system.ingredients.-=${key}`]: null });
+    await this.document.update({ [`system.ingredients.${key}`]: _del });
   }
 
 }
