@@ -24,6 +24,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
         openHotpot: HotpotMessageData.#onOpenHotpot,
         toggleCompleted: HotpotMessageData.#onToggleCompleted,
         openCookbook: HotpotMessageData.#onOpenCookbook,
+        openIngredient: HotpotMessageData.#onOpenIngredient,
       },
     };
   }
@@ -115,8 +116,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**@override */
   prepareBaseData() {
-
-    for(const ingredient of Object.values(this.ingredients)) {
+    for (const ingredient of Object.values(this.ingredients)) {
       ingredient?.prepareBaseData?.();
     }
 
@@ -604,5 +604,15 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     const journal = this.system.recipe.journal;
     if (!journal);
     journal.sheet.render({ force: true });
+  }
+
+  /**
+   * @type {ChatMessagesClickAction}
+   * @this {HotpotChatMessage}
+   */
+  static #onOpenIngredient(_event, target) {
+    const uuid = target.dataset.uuid;
+    const doc = foundry.utils.fromUuidSync(uuid);
+    doc?.sheet?.render({ force: true });
   }
 }

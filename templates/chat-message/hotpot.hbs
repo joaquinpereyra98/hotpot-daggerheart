@@ -107,11 +107,12 @@
             <img src="{{img}}" alt="{{name}}" />
             <div class="name text-style">{{name}}</div>
           </div>
-          {{#if document.isOwner}}
+          {{#if (and document document.isOwner)}}
             <div class="item-column item-controls">
               <a
                 class="icon-button item-control fa-regular fa-globe"
                 data-action="openIngredient"
+                data-uuid="{{uuid}}"
                 data-tooltip="Open Ingredient Sheet"
               ></a>
             </div>

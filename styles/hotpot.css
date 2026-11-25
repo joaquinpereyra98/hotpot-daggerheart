@@ -593,8 +593,17 @@
         font-size: large;
         background: var(--light-dark);
         color: light-dark(var(--gold-color), var(--dark-blue-color));
-        &:hover {
+        &:hover:not(:disabled) {
           background: light-dark(var(--gold-color), var(--dark-blue-color));
+          color: light-dark(var(--dark-blue-color), var(--gold-color));
+        }
+        
+        &:disabled {
+          opacity: 0.5;
+          background: light-dark(
+            var(--dark-blue-color-40),
+            var(--gold-color-40)
+          );
           color: light-dark(var(--dark-blue-color), var(--gold-color));
         }
       }
