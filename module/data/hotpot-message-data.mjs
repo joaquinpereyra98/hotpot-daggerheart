@@ -1,5 +1,6 @@
 import HotpotConfig from "../apps/hotpot-config.mjs";
 import CONSTANTS from "../constants.mjs";
+import IngredientField from "./fields/ingredient-field.mjs";
 import RecipeJournalPageData from "./recipe-journal-page-data.mjs";
 
 /**
@@ -9,16 +10,15 @@ import RecipeJournalPageData from "./recipe-journal-page-data.mjs";
 /**
  * Hotpot Message Data model.
  * @extends  {Hotpofoundry.abstract.TypeDataModel<HotpotMessageDataInterface>}
-*/
+ */
 export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
-
   /**
    * Metadata definition for this DataModel.
    */
   static get metadata() {
     return {
       documentName: foundry.documents.ChatMessage.metadata.name,
-      type: `${CONSTANTS.MODULE_ID}.hotpot`,
+      type: CONSTANTS.DOCS_TYPE.hotpot,
       template: `${CONSTANTS.TEMPLATE_PATH}/chat-message/hotpot.hbs`,
       actions: {
         openHotpot: HotpotMessageData.#onOpenHotpot,
@@ -48,60 +48,54 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       recipe: new f.SchemaField({
         name: new f.StringField({ initial: "New Recipe" }),
         description: new f.HTMLField(),
-        journal: new f.ForeignDocumentField(foundry.documents.BaseJournalEntry, { required: true }),
+        journal: new f.ForeignDocumentField(
+          foundry.documents.BaseJournalEntry,
+          { required: true },
+        ),
         img: new f.FilePathField({
           categories: ["IMAGE"],
-          initial: RecipeJournalPageData.metadata.icon, 
+          initial: RecipeJournalPageData.metadata.icon,
         }),
       }),
       completed: new f.BooleanField({ gmOnly: true }),
-      ingredients: new f.TypedObjectField(new f.SchemaField({
-        uuid: new f.DocumentUUIDField({
-          embedded: true,
-          type: "Item",
-          blank: false, 
-        }),
-        quantity: new f.NumberField({
-          initial: 1,
-          integer: true,
-          nullable: false,
-          required: true, 
-        }),
-      })),
+      ingredients: new f.TypedObjectField(new IngredientField()),
       currentPool: new f.SchemaField(
         Object.values(CONFIG.HOTPOT.flavors).reduce((acc, v) => {
           acc[`d${v.dieFace}`] = new f.NumberField({
             initial: 0,
             integer: true,
             nullable: false,
-            required: true, 
+            required: true,
           });
           return acc;
-        }, {})),
+        }, {}),
+      ),
       mealRating: new f.NumberField({
         integer: true,
         initial: 0,
         nullable: false,
-        required: true, 
+        required: true,
       }),
-      dicePool: new f.ArrayField(new f.ObjectField({
-        validate: (v) => v._evaluated,
-        validationError: "Must be a evaluated Die", 
-      })),
+      dicePool: new f.ArrayField(
+        new f.ObjectField({
+          validate: (v) => v._evaluated,
+          validationError: "Must be a evaluated Die",
+        }),
+      ),
       tokens: new f.NumberField({
         initial: 0,
         nullable: false,
         integer: true,
-        min: 0, 
+        min: 0,
       }),
       step: new f.NumberField({
         initial: 0,
         min: 0,
-        max: CONSTANTS.STEPS.length - 1, 
+        max: CONSTANTS.STEPS.length - 1,
       }),
       collectedMatched: new f.BooleanField({
         gmOnly: true,
-        initial: false, 
+        initial: false,
       }),
     };
   }
@@ -121,42 +115,43 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**@override */
   prepareBaseData() {
-    for (const ingredient of Object.values(this.ingredients)) {
-      ingredient.document ??= foundry.utils.fromUuidSync(ingredient.uuid);
+
+    for(const ingredient of Object.values(this.ingredients)) {
+      ingredient?.prepareBaseData?.();
     }
 
     /**@type {foundry.dice.terms.Die[]} */
-    this.dicePool = this.dicePool.map(d => new foundry.dice.terms.Die(d));
-    this.matchedDice = this.dicePool.flatMap(die =>
-      die.results
-        .filter(r => r.matched)
-        .map(r => ({
-          faces: die.faces,
-          result: r.result, 
-        })),
-    ).reduce((acc, r) => {
-      if (!acc[r.result]) acc[r.result] = [];
-      acc[r.result].push(r.faces);
-      return acc;
-    }, {});
-
+    this.dicePool = this.dicePool.map((d) => new foundry.dice.terms.Die(d));
+    this.matchedDice = this.dicePool
+      .flatMap((die) =>
+        die.results
+          .filter((r) => r.matched)
+          .map((r) => ({
+            faces: die.faces,
+            result: r.result,
+          })),
+      )
+      .reduce((acc, r) => {
+        if (!acc[r.result]) acc[r.result] = [];
+        acc[r.result].push(r.faces);
+        return acc;
+      }, {});
   }
 
   /**
    * Compute the total flavor strengths dynamically based on prepared ingredient documents.
-   * @type {Record<string, {strength:number}>}
+   * @type {Record<string, {strength: number, label: string, dieFace: number}>}
    */
   get totals() {
+    /**@type {Record<String, {strength: number, label: string, dieFace: number}} */
     const totals = foundry.utils.duplicate(CONFIG.HOTPOT.flavors);
-    Object.values(totals).forEach(f => f.strength = 0);
+    for (const flavor of Object.values(totals)) flavor.strength = 0;
 
     for (const ingredient of Object.values(this.ingredients)) {
-      const doc = ingredient.document;
-      if (!doc) continue;
-
-      const qty = ingredient.quantity ?? 1;
-      for (const [key, { strength = 0 }] of Object.entries(doc.system.flavors)) {
-        if (totals[key]) totals[key].strength += strength * qty;
+      for (const [key, flavorData] of Object.entries(
+        ingredient?.flavors ?? {},
+      )) {
+        if (totals[key]) totals[key].strength += flavorData ?? 0;
       }
     }
 
@@ -168,8 +163,15 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
    * @returns {Number}
    */
   get partyTier() {
-    const actors = Object.values(this.ingredients).map(i => i.document.actor);
-    const tiers = new Set(actors).reduce((acc, a) => [...acc, a.system.tier], []);
+    const actors = new Set(
+      this.ingredients.map(({ doc }) => doc?.actor).filter(Boolean),
+    );
+
+    const tiers = Array.from(actors)
+      .map((actor) => actor.system?.tier)
+      .filter((tier) => typeof tier === "number" && Number.isFinite(tier));
+
+    if (!tiers.length) return 1;
     return Math.max(1, Math.min(...tiers));
   }
   /* -------------------------------------------- */
@@ -185,9 +187,9 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /**
- * Previous step name
- * @returns {Object}
- */
+   * Previous step name
+   * @returns {Object}
+   */
   get previousStep() {
     return this.step > 0 ? CONSTANTS.STEPS[this.step - 1] : null;
   }
@@ -201,7 +203,6 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
       ? CONSTANTS.STEPS[this.step + 1]
       : null;
   }
-
 
   /**
    * Move the current step forward or backward in the step list.
@@ -225,27 +226,28 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
    */
   _getTokenInitials() {
     const { JOURNAL_FLAGS, MODULE_ID } = CONSTANTS;
-    const { objectsEqual } = foundry.utils;
+    const { equals } = foundry.utils;
 
     const journal = this.recipe?.journal;
     if (!journal) return 0;
 
-    const profile = Object.fromEntries(Object.entries(this.totals).map(([k, v]) => [k, v.strength]));
-    const match = journal.pages.some(p => {
+    const profile = Object.fromEntries(
+      Object.entries(this.totals).map(([k, v]) => [k, v.strength]),
+    );
+    const match = journal.pages.some((p) => {
       const flag = p.getFlag(MODULE_ID, JOURNAL_FLAGS.FLAVORS) ?? {};
-      return objectsEqual(profile, flag);
+      return equals(profile, flag);
     });
 
     return match ? this.partyTier : 0;
-
   }
 
   /**
    * Process duplicate results in dice and mark them as active if repeated.
-   * @param {foundry.dice.terms.Die[]} dice 
+   * @param {foundry.dice.terms.Die[]} dice
    */
   _processMatches(dice) {
-    const allResults = dice.flatMap(die => die.results.map(r => r.result));
+    const allResults = dice.flatMap((die) => die.results.map((r) => r.result));
 
     const counts = allResults.reduce((acc, value) => {
       acc[value] = (acc[value] ?? 0) + 1;
@@ -260,30 +262,41 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /**
-   * 
+   *
    * @param {Partial<foundry.documents.types.JournalEntryPageData>} data - Initial data used to create the JournalEntryPage
    * @returns {foundry.documents.types.JournalEntryPageData}
-   * @returns 
+   * @returns
    */
   toJournalData(data = {}) {
     const { name, description, img } = this.recipe;
-    return foundry.utils.mergeObject(data, {
-      name,
-      system: {
-        flavors: Object.fromEntries(Object.entries(this.totals).map(([k, v]) => [k, v.strength])),
-        img,
-        ingredients: Object.fromEntries(Object.entries(this.ingredients).map(([k,v]) => ([k, {
-          name: v.document.name,
-          quantity: v.quantity,
-        }]))),
-        source: this.#document._id,
-      }, 
-      text: {
-        content: description,
-        format: CONST.JOURNAL_ENTRY_PAGE_FORMATS.HTML,
+    return foundry.utils.mergeObject(
+      data,
+      {
+        name,
+        system: {
+          flavors: Object.fromEntries(
+            Object.entries(this.totals).map(([k, v]) => [k, v.strength]),
+          ),
+          img,
+          ingredients: Object.fromEntries(
+            Object.entries(this.ingredients).map(([k, v]) => [
+              k,
+              {
+                name: v.name,
+                quantity: v.quantity,
+              },
+            ]),
+          ),
+          source: this.#document._id,
+        },
+        text: {
+          content: description,
+          format: CONST.JOURNAL_ENTRY_PAGE_FORMATS.HTML,
+        },
+        type: RecipeJournalPageData.metadata.type,
       },
-      type: RecipeJournalPageData.metadata.type,
-    }, { inplace: false });
+      { inplace: false },
+    );
   }
 
   /**
@@ -299,15 +312,18 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     const category = await RecipeJournalPageData.getRecipeCategory(journal);
     const recipePageData = this.toJournalData({ category: category._id });
 
-    let page = await journal.pages.find(p => p.system.source === this.#document._id)?.update(recipePageData);
+    let page = await journal.pages
+      .find((p) => p.system.source === this.#document._id)
+      ?.update(recipePageData);
 
     if (!page) page = await cls.create(recipePageData, { parent: journal });
-    
-    if (render) page.sheet.render({
-      force: true,
-      pageId: page.id,
-    });
-    
+
+    if (render)
+      page.sheet.render({
+        force: true,
+        pageId: page.id,
+      });
+
     return page;
   }
 
@@ -316,7 +332,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   /* -------------------------------------------- */
 
   /**
-   * @param {Partial<Omit<foundry.documents.types.ChatMessageData, "_stats"|"_id"|"type">>} data 
+   * @param {Partial<Omit<foundry.documents.types.ChatMessageData, "_stats"|"_id"|"type">>} data
    * @returns {HotpotChatMessage}
    */
   static async create(data = {}) {
@@ -324,10 +340,14 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     const cls = foundry.documents.ChatMessage;
 
     /**@type {foundry.documents.types.ChatMessageData} */
-    const createData = foundry.utils.mergeObject(data, {
-      type: HotpotMessageData.metadata.type,
-      "system.step": 0,
-    }, { inplace: false });
+    const createData = foundry.utils.mergeObject(
+      data,
+      {
+        type: HotpotMessageData.metadata.type,
+        "system.step": 0,
+      },
+      { inplace: false },
+    );
 
     return await cls.create(createData);
   }
@@ -339,9 +359,21 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
     const allowed = await super._preUpdate(changed, options, user);
     if (allowed === false) return false;
 
-    if (hasProperty(changed, "system.dicePool")) await this._prepareDiePoolUpdate(changed.system.dicePool);
-    if (hasProperty(changed, "system.step")) await this._prepareStepUpdate(changed);
-    if (hasProperty(changed, "system.ingredients")) await this._prepareIngredientsUpdate(changed);
+    if (hasProperty(changed, "system.dicePool"))
+      await this._prepareDiePoolUpdate(changed.system.dicePool);
+    if (hasProperty(changed, "system.step"))
+      await this._prepareStepUpdate(changed);
+    if (hasProperty(changed, "system.ingredients"))
+      await this._prepareIngredientsUpdate(changed, options, user);
+  }
+
+  /** @inheritDoc */
+  _onUpdate(changed, options, userId) {
+    for (const [key, data] of Object.entries(
+      changed.system?.ingredients ?? {},
+    )) {
+      this.ingredients[key]?._onUpdate?.(data, options, userId);
+    }
   }
 
   /**
@@ -352,12 +384,13 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
    */
   async _prepareDiePoolUpdate(dicePool) {
     const { Die } = foundry.dice.terms;
-    dicePool = await Promise.all(dicePool.map(async die => {
-
-      if (!(die instanceof Die)) die = new Die(die);
-      if (!die._evaluated) await die.evaluate();
-      return die.toJSON();
-    }));
+    dicePool = await Promise.all(
+      dicePool.map(async (die) => {
+        if (!(die instanceof Die)) die = new Die(die);
+        if (!die._evaluated) await die.evaluate();
+        return die.toJSON();
+      }),
+    );
 
     this._processMatches(dicePool);
   }
@@ -369,14 +402,21 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
    * @async
    */
   async _prepareStepUpdate(changed) {
-    const STEPS = Object.fromEntries(CONSTANTS.STEPS.map(step => [step.id, step.index]));
+    const STEPS = Object.fromEntries(
+      CONSTANTS.STEPS.map((step) => [step.id, step.index]),
+    );
     const goingForward = changed.system.step > this.step;
     if (goingForward) {
       switch (changed.system.step) {
         case STEPS.roll:
           changed.system.dicePool ??= [];
           changed.system.mealRating ??= 0;
-          changed.system.currentPool ??= Object.fromEntries(Object.values(this.totals).map(v => [`d${v.dieFace}`, v.strength]));
+          changed.system.currentPool ??= Object.fromEntries(
+            Object.values(this.totals).map((v) => [
+              `d${v.dieFace}`,
+              v.strength,
+            ]),
+          );
           changed.system.tokens ??= this._getTokenInitials();
           break;
       }
@@ -385,32 +425,30 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
   /**
    * Add or delete apps from ingredients apps collecitons.
-   * @param {any} changed - The candidate changes to the Document
-   * @returns {Promise<void>} Resolves once all dice have been evaluated and converted to JSON.
+   * @param {object} changes            The candidate changes to the Document
+   * @param {object} options            Additional options which modify the update request
+   * @param {documents.BaseUser} user   The User requesting the document update
+   * @returns {Promise<boolean|void>}
    * @async
    */
-  async _prepareIngredientsUpdate(changed) {
-    const utils = foundry.utils;
+  async _prepareIngredientsUpdate(changes, options, user) {
+    const updates = changes.system?.ingredients;
 
-    // Find the active HotpotConfig app
-    const app = this.app;
-    if (!app) return;
+    if (!updates) return;
 
-    for (const [key, ingredient] of Object.entries(changed.system.ingredients)) {
-      // Handle deletion
-      if (ingredient === null && utils.isDeletionKey(key)) {
-        utils.deleteProperty(this.ingredients[key.slice(2)]?.document.apps, app.id);
-        continue;
-      }
-
-      // Handle addition
-      if (ingredient && !utils.hasProperty(this.ingredients, key)) {
-        const doc = utils.fromUuidSync(ingredient.uuid);
-        doc.apps[app.id] = app;
+    for (const [key, data] of Object.entries(updates)) {
+      const ingredient = this.ingredients[key];
+      if (ingredient) {
+        const allowed = await ingredient?._preUpdate?.(data, options, user);
+        if (allowed === false) return false;
+      } else if (data.uuid) {
+        const doc = foundry.utils.fromUuidSync(data.uuid);
+        data.name = doc.name;
+        data.img = doc.img;
+        data.quantity ??= 1;
       }
     }
   }
-
 
   /* -------------------------------------------- */
   /*  Rendering                                   */
@@ -437,7 +475,10 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   async render(options) {
     if (!this.template) return "";
     const context = await this._prepareContext(options);
-    return foundry.applications.handlebars.renderTemplate(this.template, context);
+    return foundry.applications.handlebars.renderTemplate(
+      this.template,
+      context,
+    );
   }
 
   /**
@@ -465,7 +506,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
     const isWhisper = !!doc.whisper.length;
 
-    const steps = CONSTANTS.STEPS.map(s => {
+    const steps = CONSTANTS.STEPS.map((s) => {
       const status = this.completed
         ? "completed"
         : s.index === this.step
@@ -476,7 +517,7 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
 
       return {
         ...s,
-        classes: status, 
+        classes: status,
       };
     });
 
@@ -498,16 +539,18 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
         this.#document.blind ? "blind" : null,
       ].filterJoin(" "),
       isWhisper,
-      whisperTo: doc.whisper.map(u => game.users.get(u)?.name).filterJoin(", "),
+      whisperTo: doc.whisper
+        .map((u) => game.users.get(u)?.name)
+        .filterJoin(", "),
     };
   }
 
   /**
    * Add event listeners to the HTML Message.
-   * @param {HTMLElement} html 
+   * @param {HTMLElement} html
    */
   #attachFrameListeners(html) {
-    html.querySelectorAll("[data-action]").forEach(btn => {
+    html.querySelectorAll("[data-action]").forEach((btn) => {
       btn.addEventListener("click", (event) => {
         const target = event.currentTarget;
         const { action } = target.dataset;
@@ -523,10 +566,11 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
         finishBtn.classList.toggle("fa-lock-open", !lockOn);
       };
 
-      finishBtn.addEventListener("mouseover", () => toggleIcons(!this.completed));
+      finishBtn.addEventListener("mouseover", () =>
+        toggleIcons(!this.completed),
+      );
       finishBtn.addEventListener("mouseout", () => toggleIcons(this.completed));
     }
-
   }
 
   /* -------------------------------------------- */
@@ -553,9 +597,9 @@ export default class HotpotMessageData extends foundry.abstract.TypeDataModel {
   }
 
   /**
- * @type {ChatMessagesClickAction}
- * @this {HotpotChatMessage}
- */
+   * @type {ChatMessagesClickAction}
+   * @this {HotpotChatMessage}
+   */
   static #onOpenCookbook() {
     const journal = this.system.recipe.journal;
     if (!journal);

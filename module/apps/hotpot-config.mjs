@@ -1,22 +1,25 @@
 import CONSTANTS from "../constants.mjs";
 
-const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { DocumentSheetV2, HandlebarsApplicationMixin } =
+  foundry.applications.api;
 
 /**
  * @typedef {import("@client/applications/_types.mjs").ApplicationFormSubmission} ApplicationFormSubmission
  * @typedef {import("@client/applications/_types.mjs").ApplicationConfiguration} ApplicationConfiguration
  * @typedef {import("@client/applications/_types.mjs").ApplicationClickAction} ApplicationClickAction
  * @typedef {import("@client/applications/_types.mjs").ApplicationRenderOptions} ApplicationRenderOptions
- * @typedef {import("@client/applications/_types.mjs").ApplicationRenderContext} ApplicationRenderContext 
+ * @typedef {import("@client/applications/_types.mjs").ApplicationRenderContext} ApplicationRenderContext
  * @typedef {import("@client/applications/api/handlebars-application.mjs").HandlebarsTemplatePart} HandlebarsTemplatePart
- * @typedef {import("@client/applications/api/handlebars-application.mjs").HandlebarsRenderOptions} HandlebarsRenderOptions 
+ * @typedef {import("@client/applications/api/handlebars-application.mjs").HandlebarsRenderOptions} HandlebarsRenderOptions
  */
 
 /**
  * @extends {foundry.applications.api.DocumentSheetV2}
  * @mixes foundry.applications.api.HandlebarsApplicationMixin
  */
-export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentSheetV2) {
+export default class HotpotConfig extends HandlebarsApplicationMixin(
+  DocumentSheetV2,
+) {
   /**@type {ApplicationConfiguration} */
   static DEFAULT_OPTIONS = {
     classes: ["hotpot", "hotpot-config", "daggerheart", "dh-style", "dialog"],
@@ -68,7 +71,7 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /**@inheritdoc */
   _initializeApplicationOptions(options) {
     const initialized = super._initializeApplicationOptions(options);
-    initialized.classes = initialized.classes.filter(cls => cls !== "sheet");
+    initialized.classes = initialized.classes.filter((cls) => cls !== "sheet");
     initialized.window.controls = [];
     return initialized;
   }
@@ -95,7 +98,10 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /** @inheritDoc */
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
-    Object.values(this.document.system.ingredients).forEach(i => i.document.apps[this.id] = this);
+    Object.values(this.document.system.ingredients).forEach((i) => {
+      const apps = i.document?.apps;
+      if (apps) apps[this.id] = this;
+    });
   }
 
   /** @inheritDoc */
@@ -112,7 +118,9 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /** @inheritDoc */
   _onClose(options) {
     super._onClose(options);
-    Object.values(this.document.system.ingredients).forEach(i => delete i.document.apps[this.id]);
+    Object.values(this.document.system.ingredients).forEach(
+      (i) => delete i?.document?.apps[this.id],
+    );
   }
 
   /**
@@ -121,46 +129,63 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   _addDiceHoverListener() {
     const selector = ".dice";
-    this.element.querySelectorAll(selector).forEach(div => {
+    this.element.querySelectorAll(selector).forEach((div) => {
       div.addEventListener("mouseover", (event) => {
         const target = event.currentTarget;
         const { result } = target.dataset;
 
-        target.closest(".dice-pool")
+        target
+          .closest(".dice-pool")
           .querySelectorAll(`${selector}[data-result="${result}"]`)
-          .forEach(die => die.classList.add("hovered"));
+          .forEach((die) => die.classList.add("hovered"));
       });
 
       div.addEventListener("mouseout", (event) => {
         const target = event.currentTarget;
         const { result } = target.dataset;
 
-        target.closest(".dice-pool")
+        target
+          .closest(".dice-pool")
           .querySelectorAll(`${selector}[data-result="${result}"]`)
-          .forEach(die => die.classList.remove("hovered"));
+          .forEach((die) => die.classList.remove("hovered"));
       });
     });
   }
 
   /**
-   * An event that occurs when data is dropped into a drop target.
+   * Handle data dropped onto a drop target.
    * @param {DragEvent} event
-   * @returns {Promise<void>}
+   * @returns {Promise<unknown>}
    * @protected
    */
   async _onDrop(event) {
-    const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
+    const { TextEditor } = foundry.applications.ux;
+    const data = TextEditor.getDragEventData(event);
+    if (!data?.type || !data?.uuid) return;
 
-    // Dropped Documents
+    // 1. Ensure the dropped document belongs to a valid collection
     const documentClass = foundry.utils.getDocumentClass(data.type);
     if (!documentClass) return;
-
-    const { collection, embedded } = foundry.utils.parseUuid(data.uuid);
-    if (collection instanceof foundry.documents.collections.CompendiumCollection) return ui.notifications.warn("The document must exist in the world, it is not a compendium");
-    if (!embedded.length) return ui.notifications.warn("may not be an embedded document");
-
     const doc = await documentClass.fromDropData(data);
-    if (doc.type !== HOTPOT.data.IngredientModel.metadata.type) return;
+    const targetType = HOTPOT.data.IngredientModel.metadata.type;
+
+    if (!doc || doc.type !== targetType) {
+      return ui.notifications.warn(
+        `Only documents of type "${targetType}" can be dropped here.`,
+      );
+    }
+
+    if (doc.compendium) {
+      return ui.notifications.warn(
+        "The document must exist in the world, not in a compendium.",
+      );
+    }
+
+    if (!doc.isEmbedded) {
+      return ui.notifications.warn(
+        "The dropped document must be an embedded document.",
+      );
+    }
 
     return this.#submitUpdate({
       [`system.ingredients.${doc.id}`]: {
@@ -174,9 +199,15 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
   /*  Context                                     */
   /* -------------------------------------------- */
 
-  get currentStep() { return this.document.system.currentStep; }
-  get previousStep() { return this.document.system.previousStep; }
-  get nextStep() { return this.document.system.nextStep; }
+  get currentStep() {
+    return this.document.system.currentStep;
+  }
+  get previousStep() {
+    return this.document.system.previousStep;
+  }
+  get nextStep() {
+    return this.document.system.nextStep;
+  }
 
   /**@inheritdoc */
   async _prepareContext(options) {
@@ -188,13 +219,17 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       nextStep: this.nextStep,
     };
 
-    context.ingredients = Object.values(this.document.system.ingredients).sort((a, b) => {
-      if (a.document.isOwner && !b.document.isOwner) return -1;
-      if (b.document.isOwner && !a.document.isOwner) return 1;
-      const parentSort = a.document.parent.name.localeCompare(b.document.parent.name);
-      if (parentSort !== 0) return parentSort;
-      return a.document.name.localeCompare(b.document.name);
-    });
+    context.ingredients = Object.values(this.document.system.ingredients).sort(
+      (a, b) => {
+        if (a.document.isOwner && !b.document.isOwner) return -1;
+        if (b.document.isOwner && !a.document.isOwner) return 1;
+        const parentSort = a.document.parent.name.localeCompare(
+          b.document.parent.name,
+        );
+        if (parentSort !== 0) return parentSort;
+        return a.document.name.localeCompare(b.document.name);
+      },
+    );
 
     context.isGM = game.user.isGM;
 
@@ -225,8 +260,8 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
 
   /**
    * Prepare render context for the Header part.
-   * @param {ApplicationRenderContext} context 
-   * @param {HandlebarsRenderOptions} options 
+   * @param {ApplicationRenderContext} context
+   * @param {HandlebarsRenderOptions} options
    * @returns {Promise<void>}
    * @protected
    */
@@ -249,32 +284,36 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
       return {
         ...s,
         classes: classes.join(" "),
-        action, 
+        action,
       };
     });
   }
 
   /**
    * Prepare render context for the Roll part.
-   * @param {ApplicationRenderContext} context 
+   * @param {ApplicationRenderContext} context
    * @param {HandlebarsRenderOptions} _options
    * @returns {Promise<void>}
    * @protected
    */
   async _prepareRollContext(context, _options) {
-    const { dicePool, currentPool, matchedDice, collectedMatched } = this.document.system;
+    const { dicePool, currentPool, matchedDice, collectedMatched } =
+      this.document.system;
 
     context.dice = dicePool;
-    context.dicePoolIsEmpty = !Object.values(currentPool).some(v => v > 0);
+    context.dicePoolIsEmpty = !Object.values(currentPool).some((v) => v > 0);
     context.matchedDice = matchedDice;
-    context.totalMatch = Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
+    context.totalMatch = Object.keys(matchedDice).reduce(
+      (acc, k) => (acc += Number(k)),
+      0,
+    );
     context.collectedMatched = collectedMatched || !context.totalMatch;
   }
 
   /**
    * Prepare render context for the Record part.
-   * @param {ApplicationRenderContext} context 
-   * @param {HandlebarsRenderOptions} _options 
+   * @param {ApplicationRenderContext} context
+   * @param {HandlebarsRenderOptions} _options
    * @returns {Promise<void>}
    * @protected
    */
@@ -303,11 +342,12 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
 
   /** @inheritdoc*/
   async _processSubmitData(event, form, submitData, options = {}) {
-    if (this.document.isOwner) return await super._processSubmitData(event, form, submitData, options);
+    if (this.document.isOwner)
+      return await super._processSubmitData(event, form, submitData, options);
     const gm = game.users.activeGM;
     if (!gm) return;
 
-    return gm.query(CONSTANTS.queries.updateHotpotAsGm, {
+    return gm.query(CONSTANTS.QUERIES.updateHotpotAsGm, {
       messageId: this.document.id,
       data: submitData,
     });
@@ -324,12 +364,10 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     const gm = game.users.activeGM;
     if (!gm) return;
 
-    return gm.query(
-      CONSTANTS.queries.updateHotpotAsGm,
-      {
-        messageId: this.document.id,
-        data: updateData,
-      });
+    return gm.query(CONSTANTS.QUERIES.updateHotpotAsGm, {
+      messageId: this.document.id,
+      data: updateData,
+    });
   }
 
   /* -------------------------------------------- */
@@ -354,7 +392,8 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     if (!event.shiftKey) {
       const confirm = await DialogV2.confirm({
         window: { title: "Previous Step" },
-        content: "<p>Return to a previous step? This could reset some fields.</p>",
+        content:
+          "<p>Return to a previous step? This could reset some fields.</p>",
       });
       if (!confirm) return;
     }
@@ -371,7 +410,9 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     if (!itemId) return;
     const { quantity, document } = this.document.system.ingredients[itemId];
     const newQty = Math.clamp(quantity + addend, 1, document.system.quantity);
-    return this.#submitUpdate({ [`system.ingredients.${itemId}.quantity`]: newQty });
+    return this.#submitUpdate({
+      [`system.ingredients.${itemId}.quantity`]: newQty,
+    });
   }
 
   /**
@@ -395,7 +436,8 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static #onRemoveIngredient(_, target) {
     const { itemId } = target.closest("[data-item-id]").dataset;
-    if (itemId) return this.#submitUpdate({ [`system.ingredients.${itemId}`]: _del });
+    if (itemId)
+      return this.#submitUpdate({ [`system.ingredients.${itemId}`]: _del });
   }
 
   /**
@@ -415,14 +457,24 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    * @this HotpotConfig
    */
   static async #onCollectMatched() {
-    const { dicePool, currentPool, mealRating, matchedDice } = this.document.system;
+    const { dicePool, currentPool, mealRating, matchedDice } =
+      this.document.system;
     // Calculate totalMatch from matchedDice
-    const newTotal = mealRating + Object.keys(matchedDice).reduce((acc, k) => acc += Number(k), 0);
+    const newTotal =
+      mealRating +
+      Object.keys(matchedDice).reduce((acc, k) => (acc += Number(k)), 0);
     // Update the dice pool by removing matched dice
-    const newPool = dicePool.reduce((acc, d) => ({
-      ...acc,
-      [`d${d.faces}`]: Math.max(0, currentPool[`d${d.faces}`] - d.results.filter(r => r.matched).length),
-    }), {});
+    const newPool = dicePool.reduce(
+      (acc, d) => ({
+        ...acc,
+        [`d${d.faces}`]: Math.max(
+          0,
+          currentPool[`d${d.faces}`] -
+            d.results.filter((r) => r.matched).length,
+        ),
+      }),
+      {},
+    );
 
     // Update mealRating with totalMatch and mark collectedMatched as true
     return await this.document.update({
@@ -443,14 +495,16 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
     /**@type {Promise<foundry.dice.terms.Die>[]} */
     const diceTerms = Object.entries(currentPool)
       .filter(([_, v]) => v > 0)
-      .map(([k, v]) => new Die({
-        number: v,
-        faces: Number(k.slice(1)), 
-      }).evaluate());
+      .map(([k, v]) =>
+        new Die({
+          number: v,
+          faces: Number(k.slice(1)),
+        }).evaluate(),
+      );
     const dice = await Promise.all(diceTerms);
 
     return await this.document.update({
-      "system.dicePool": dice.map(d => d.toJSON()),
+      "system.dicePool": dice.map((d) => d.toJSON()),
       "system.collectedMatched": false,
     });
   }
@@ -461,10 +515,9 @@ export default class HotpotConfig extends HandlebarsApplicationMixin(DocumentShe
    */
   static async #onFinishHotpot() {
     if (!game.user.isGM) return;
-    
+
     await this.document.system.getJournalRecipe();
     await this.document.update({ "system.completed": true });
     return await this.close();
   }
-
 }

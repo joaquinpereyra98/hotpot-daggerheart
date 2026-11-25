@@ -10,7 +10,7 @@ export default class RecipeJournalPageData extends foundry.abstract.TypeDataMode
       documentName: foundry.documents.JournalEntryPage.metadata.name,
       label: "Recipe",
       labelPlural: "Recipes",
-      type: `${CONSTANTS.MODULE_ID}.recipe`,
+      type: CONSTANTS.DOCS_TYPE.recipe,
       icon: "icons/svg/book.svg",
     };
   }

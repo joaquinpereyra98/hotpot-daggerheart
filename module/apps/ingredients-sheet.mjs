@@ -1,5 +1,7 @@
 import CONSTANTS from "../constants.mjs";
 
+const GLOBAL_TABS_PARTIAL = "systems/daggerheart/templates/sheets/global/tabs";
+
 /**
  * Factory function that creates a custom Item Sheet for ingredients.
  * This function is only because system classes are not exposed globally before init
@@ -28,37 +30,52 @@ export default function createIngredientSheet() {
           selector: "[data-flavor]",
           options: {
             parentClassHooks: false,
-            fixed: true, 
+            fixed: true,
           },
         },
       ],
     };
 
     /**@override */
-    static TABS = {};
-
-    /**@override */
     static PARTS = {
-      header: { template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/header.hbs` },
-      main: { template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/main.hbs` },
+      header: {
+        template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/header.hbs`,
+      },
+      tabs: {
+        template: `${GLOBAL_TABS_PARTIAL}/tab-navigation.hbs`,
+      },
+      description: {
+        template: `${GLOBAL_TABS_PARTIAL}/tab-description.hbs`,
+        scrollable: [".description-section"],
+      },
+      actions: {
+        template: `${GLOBAL_TABS_PARTIAL}/tab-actions.hbs`,
+        scrollable: [""],
+      },
+      settings: {
+        template: `${CONSTANTS.TEMPLATE_PATH}/ingredient-sheet/settings.hbs`,
+        scrollable: [""],
+      },
+      effects: {
+        template: `${GLOBAL_TABS_PARTIAL}/tab-effects.hbs`,
+        scrollable: [""],
+      },
     };
 
     /**@inheritdoc */
     async _prepareContext(options) {
       const context = await super._prepareContext(options);
-      context.flavorChoices = [{ key: "" },
+      context.flavorChoices = [
+        { key: "" },
         ...Object.entries(CONFIG.HOTPOT.flavors)
           .map(([key, v]) => ({
             key,
-            label: `${v.label} (d${v.dieFace})`, 
+            label: `${v.label} (d${v.dieFace})`,
           }))
-          .filter(f => !Object.keys(this.item.system.flavors).includes(f.key))];
-
-      context.enrichedDescription = await foundry.applications.ux.TextEditor.enrichHTML(this.item.system.description, {
-        relativeTo: this.item,
-        rollData: this.item.getRollData(),
-        secrets: this.item.isOwner,
-      });
+          .filter(
+            (f) => !Object.keys(this.item.system.flavors).includes(f.key),
+          ),
+      ];
 
       return context;
     }
@@ -68,42 +85,47 @@ export default function createIngredientSheet() {
     /* -------------------------------------------- */
 
     /**
-   * Get the set of ContextMenu options for Features.
-   * @returns {import('@client/applications/ux/context-menu.mjs').ContextMenuEntry[]} - The Array of context options passed to the ContextMenu instance
-   * @this {IngredientSheet}
-   * @protected
-   */
+     * Get the set of ContextMenu options for Features.
+     * @returns {import('@client/applications/ux/context-menu.mjs').ContextMenuEntry[]} - The Array of context options passed to the ContextMenu instance
+     * @this {IngredientSheet}
+     * @protected
+     */
     static #getFlavorContextOptions() {
-      return [{
-        name: "CONTROLS.CommonDelete",
-        icon: "<i class=\"fa-solid fa-trash\"></i>",
-        callback: async target => {
-          const { flavor } = target.closest("[data-flavor]").dataset;
-          if (!flavor) return;
-          await this.document.update({ [`system.flavors.${flavor}`]: _del });
+      return [
+        {
+          name: "CONTROLS.CommonDelete",
+          icon: '<i class="fa-solid fa-trash"></i>',
+          callback: async (target) => {
+            const { flavor } = target.closest("[data-flavor]").dataset;
+            if (!flavor) return;
+            await this.document.update({ [`system.flavors.${flavor}`]: _del });
+          },
         },
-      }];
+      ];
     }
-
 
     /* -------------------------------------------- */
     /*  Event Listeners and Handlers                */
     /* -------------------------------------------- */
 
     /**
-     * 
+     *
      * @this {IngredientSheet}
      * @type {import("@client/applications/_types.mjs").ApplicationClickAction}
      */
     static async #onAddFlavor() {
       /**@type {HTMLSelectElement} */
-      const select = this.element.querySelector(`[id="${this.id}-newFlavorType"]`);
+      const select = this.element.querySelector(
+        `[id="${this.id}-newFlavorType"]`,
+      );
       if (!select.value) return;
-      return await this.item.update({ [`system.flavors.${select.value}.strength`]: 1 });
+      return await this.item.update({
+        [`system.flavors.${select.value}.strength`]: 1,
+      });
     }
 
     /**
-     * 
+     *
      * @this {IngredientSheet}
      * @type {import("@client/applications/_types.mjs").ApplicationClickAction}
      */
@@ -111,7 +133,6 @@ export default function createIngredientSheet() {
       const { flavor } = target.closest("[data-flavor]")?.dataset ?? {};
       return await this.item.update({ [`system.flavors.${flavor}`]: _del });
     }
-
   }
 
   return IngredientSheet;

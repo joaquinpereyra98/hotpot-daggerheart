@@ -2,13 +2,13 @@
  *
  * @param {foundry.applications.sheets.ActorSheetV2} application
  * @param {HTMLElement} element
- * @param {import("@client/applications/_types.mjs").ApplicationRenderContext} context
+ * @param {import("@client/applications/_types.mjs").ApplicationRenderContext} _context
  * @param {import("@client/applications/_types.mjs").ApplicationRenderOptions} options
  */
 export default function onRenderCharacterSheet(
   application,
   element,
-  context,
+  _context,
   options,
 ) {
   const itemSection = element.querySelector(".tab.inventory .items-section");
@@ -24,6 +24,7 @@ export default function onRenderCharacterSheet(
       hideResources: false,
       showActions: false,
       hideDescription: true,
+      isQuantifiable: true,
     },
     {
       allowProtoMethodsByDefault: true,
@@ -43,6 +44,11 @@ export default function onRenderCharacterSheet(
         JSON.stringify(doc.toDragData()),
       );
     };
+  });
+  
+  fieldsset.querySelectorAll(".inventory-item-quantity").forEach((element) => {
+    element.addEventListener("change", application.updateItemQuantity.bind(this));
+    element.addEventListener("click", (e) => e.stopPropagation());
   });
   itemSection.appendChild(fieldsset);
 

@@ -7,16 +7,20 @@
         </div>
         <ul class="ingredients-list scrollable">
             {{#each ingredients}}
-            <li class="item" data-item-id="{{document.id}}">
+            <li class="item" data-item-id="{{@key}}">
                 <div class="item-row">
                     <div class="item-column item-name">
-                        <img src="{{document.img}}" alt="{{document.name}}">
-                        <div class="name">{{document.name}}</div>
+                        <img src="{{img}}" alt="{{name}}">
+                        <div class="name">{{name}}</div>
                     </div>
                     <div class="item-colums item-user">
+                    {{#if document.parent}}
                         {{document.parent.name}}
+                        {{else}}
+                        No Owner
+                    {{/if}}
                     </div>
-                    {{#if document.isOwner}}
+                    {{#if (or document.isOwner @root.isGM)}}
                     <div class="item-column item-quantity">
                         <a
                             class="quantity-control fa-regular fa-minus"
@@ -27,17 +31,18 @@
 
                         <input
                             class="quantity-input"
-                            name="ingredients.{{document.id}}.quantity"
+                            name="ingredients.{{@key}}.quantity"
                             max="{{document.system.quantity}}"
                             type="number"
                             value="{{quantity}}"
+                            {{disabled (not document)}}
                         >
 
                         <a
                             class="quantity-control fa-regular fa-plus"
                             data-action="modifyItemQuantity"
                             data-modification="increase"
-                            {{disabled (eq document.system.quantity quantity)}}
+                            {{disabled (or (not document) (eq document.system.quantity quantity))}}
                         ></a>
                     </div>
                     <div class="item-column item-controls">
@@ -57,7 +62,7 @@
                     {{/if}}
                 </div>
                 <div class="item-row flavor-row">
-                    {{#each document.system.flavors as |flavor key|}}
+                    {{#each document.system.preparedFlavors as |flavor key|}}
                     <div class="flavor-tag" data-flavor="{{key}}">
                         <span class="flavor-label"> {{flavor.label}} (d{{flavor.dieFace}}) </span>
                         <input
